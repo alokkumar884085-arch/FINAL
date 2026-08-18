@@ -1,5 +1,5 @@
 # ============================================
-# COMPLETE GMAIL CREATOR BOT - RAILWAY/VPS
+# GMAIL CREATOR BOT - RAILWAY/VPS
 # ============================================
 # TOKEN: 8879549452:AAHNvGlBHktN6L-kpUS7H3jp7X-ROwmk9c4
 # OWNER: 8785590284
@@ -13,9 +13,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Optional
-from concurrent.futures import ThreadPoolExecutor
 import threading
-import os
 
 # Telegram
 from telegram import Update
@@ -38,7 +36,7 @@ import chromedriver_autoinstaller
 import requests
 
 # ============================================
-# CONFIGURATION - TOKEN CODE MEIN HI
+# CONFIGURATION
 # ============================================
 
 BOT_TOKEN = "8879549452:AAHNvGlBHktN6L-kpUS7H3jp7X-ROwmk9c4"
@@ -48,7 +46,7 @@ MAX_CONCURRENT_USERS = 5
 HEADLESS_MODE = True
 
 # ============================================
-# 300+ PROXY LIST (CODED)
+# 300+ PROXY LIST
 # ============================================
 
 PROXY_LIST = [
@@ -640,7 +638,7 @@ class GmailBot:
             self.driver.get("https://accounts.google.com/signup")
             time.sleep(5)
             
-            # ========== NAME ==========
+            # NAME
             first_name = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.ID, "firstName"))
             )
@@ -654,7 +652,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(3)
             
-            # ========== DOB (18+) ==========
+            # DOB (18+)
             dob = generate_dob()
             logger.info(f"🎂 DOB: {dob['full']} (Age: {dob['age']})")
             
@@ -692,7 +690,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(3)
             
-            # ========== EMAIL ==========
+            # EMAIL
             username = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.ID, "username"))
             )
@@ -714,7 +712,7 @@ class GmailBot:
             except:
                 pass
             
-            # ========== PASSWORD ==========
+            # PASSWORD
             password_field = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.NAME, "Passwd"))
             )
@@ -737,7 +735,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(3)
             
-            # ========== PHONE ==========
+            # PHONE
             phone_input = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.ID, "phoneNumberId"))
             )
@@ -749,7 +747,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(5)
             
-            # ========== OTP ==========
+            # OTP
             if otp_callback:
                 otp = otp_callback()
                 if not otp:
@@ -783,7 +781,7 @@ class GmailBot:
                 except:
                     return (False, None, "❌ OTP verification failed! Please check your OTP.")
             
-            # ========== SKIP RECOVERY ==========
+            # SKIP RECOVERY
             try:
                 skip_btn = WebDriverWait(self.driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, "//span[text()='Skip']"))
@@ -793,7 +791,7 @@ class GmailBot:
             except:
                 pass
             
-            # ========== AGREE ==========
+            # AGREE
             try:
                 agree_btn = WebDriverWait(self.driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, "//span[text()='I agree']"))
@@ -1283,22 +1281,25 @@ def main():
     # Setup ChromeDriver
     setup_chromedriver()
     
-    app = Application.builder().token(BOT_TOKEN).build()
+    # ✅ Application - New version compatible
+    application = Application.builder().token(BOT_TOKEN).build()
     
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("make", make_command))
-    app.add_handler(CommandHandler("cancel", cancel))
-    app.add_handler(CommandHandler("stats", stats_command))
-    app.add_handler(CommandHandler("active", active_command))
-    app.add_handler(CommandHandler("approve", approve_command))
-    app.add_handler(CommandHandler("reject", reject_command))
-    app.add_handler(CommandHandler("remove", remove_command))
-    app.add_handler(CommandHandler("pending", pending_command))
-    app.add_handler(CommandHandler("approved", approved_command))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.add_error_handler(error_handler)
+    # Add handlers
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("make", make_command))
+    application.add_handler(CommandHandler("cancel", cancel))
+    application.add_handler(CommandHandler("stats", stats_command))
+    application.add_handler(CommandHandler("active", active_command))
+    application.add_handler(CommandHandler("approve", approve_command))
+    application.add_handler(CommandHandler("reject", reject_command))
+    application.add_handler(CommandHandler("remove", remove_command))
+    application.add_handler(CommandHandler("pending", pending_command))
+    application.add_handler(CommandHandler("approved", approved_command))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_error_handler(error_handler)
     
-    app.run_polling()
+    # ✅ Start polling
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
