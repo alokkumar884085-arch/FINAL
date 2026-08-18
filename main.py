@@ -1,5 +1,5 @@
 # ============================================
-# GMAIL CREATOR BOT - RAILWAY/VPS
+# GMAIL CREATOR BOT - PYTHON 3.11 COMPATIBLE
 # ============================================
 # TOKEN: 8879549452:AAHNvGlBHktN6L-kpUS7H3jp7X-ROwmk9c4
 # OWNER: 8785590284
@@ -32,9 +32,6 @@ from selenium_stealth import stealth
 from webdriver_manager.chrome import ChromeDriverManager
 import chromedriver_autoinstaller
 
-# Requests
-import requests
-
 # ============================================
 # CONFIGURATION
 # ============================================
@@ -46,7 +43,7 @@ MAX_CONCURRENT_USERS = 5
 HEADLESS_MODE = True
 
 # ============================================
-# 300+ PROXY LIST
+# PROXY LIST
 # ============================================
 
 PROXY_LIST = [
@@ -384,7 +381,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ============================================
-# DOB GENERATOR (18+)
+# DOB GENERATOR
 # ============================================
 
 def generate_dob() -> Dict:
@@ -403,7 +400,7 @@ def generate_dob() -> Dict:
     }
 
 # ============================================
-# USER APPROVAL SYSTEM
+# APPROVAL SYSTEM
 # ============================================
 
 class ApprovalSystem:
@@ -564,12 +561,11 @@ user_semaphore = asyncio.Semaphore(MAX_CONCURRENT_USERS)
 # ============================================
 
 def setup_chromedriver():
-    """Setup ChromeDriver for Railway/VPS"""
     try:
         chromedriver_autoinstaller.install()
         logger.info("✅ ChromeDriver installed successfully")
     except Exception as e:
-        logger.warning(f"⚠️ Autoinstall failed: {e}, trying webdriver-manager")
+        logger.warning(f"⚠️ Autoinstall failed: {e}")
         try:
             ChromeDriverManager().install()
             logger.info("✅ ChromeDriver installed via webdriver-manager")
@@ -589,18 +585,15 @@ class GmailBot:
     def _setup_driver(self):
         options = Options()
         
-        # Proxy
         if self.proxy:
             if self.proxy.startswith(('http://', 'https://', 'socks5://')):
                 options.add_argument(f'--proxy-server={self.proxy}')
             else:
                 options.add_argument(f'--proxy-server=http://{self.proxy}')
         
-        # Headless
         if HEADLESS_MODE:
             options.add_argument("--headless=new")
         
-        # Anti-detection
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
@@ -652,7 +645,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(3)
             
-            # DOB (18+)
+            # DOB
             dob = generate_dob()
             logger.info(f"🎂 DOB: {dob['full']} (Age: {dob['age']})")
             
@@ -670,7 +663,6 @@ class GmailBot:
             
             day_input = self.driver.find_element(By.ID, "day")
             day_input.send_keys(str(dob['day_int']))
-            
             year_input = self.driver.find_element(By.ID, "year")
             year_input.send_keys(str(dob['year_int']))
             
@@ -717,7 +709,6 @@ class GmailBot:
                 EC.presence_of_element_located((By.NAME, "Passwd"))
             )
             password_field.send_keys(password)
-            
             confirm_password = self.driver.find_element(By.NAME, "PasswdAgain")
             confirm_password.send_keys(password)
             
@@ -828,7 +819,7 @@ def get_user_state(user_id: str) -> UserState:
         return user_sessions[user_id]
 
 # ============================================
-# TELEGRAM BOT HANDLERS
+# BOT HANDLERS
 # ============================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1281,7 +1272,7 @@ def main():
     # Setup ChromeDriver
     setup_chromedriver()
     
-    # ✅ Application - New version compatible
+    # Application
     application = Application.builder().token(BOT_TOKEN).build()
     
     # Add handlers
@@ -1298,7 +1289,7 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_error_handler(error_handler)
     
-    # ✅ Start polling
+    # Start polling
     application.run_polling()
 
 if __name__ == "__main__":
