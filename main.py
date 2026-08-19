@@ -1,5 +1,5 @@
 # ============================================
-# GMAIL CREATOR BOT - COMPLETE FEATURES
+# GMAIL CREATOR BOT - WITH DETAILED ERROR LOGGING
 # ============================================
 # TOKEN: 8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec
 # OWNER: 8785590284
@@ -16,6 +16,7 @@ from typing import Dict, Optional
 import threading
 import os
 import sys
+import traceback
 
 # Telegram
 from telegram import Update
@@ -41,9 +42,6 @@ try:
 except:
     CAPSOLVER_AVAILABLE = False
 
-# Requests
-import requests
-
 # ============================================
 # CONFIGURATION
 # ============================================
@@ -68,6 +66,21 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+# ✅ ERROR LOG FILE
+ERROR_LOG_FILE = "error_log.txt"
+
+def log_error(error_msg: str, traceback_str: str = None):
+    """Error ko file mein log karo"""
+    try:
+        with open(ERROR_LOG_FILE, 'a') as f:
+            f.write(f"\n{'='*50}\n")
+            f.write(f"Time: {datetime.now().isoformat()}\n")
+            f.write(f"Error: {error_msg}\n")
+            if traceback_str:
+                f.write(f"Traceback: {traceback_str}\n")
+    except:
+        pass
 
 # ============================================
 # DOB GENERATOR (18+)
@@ -553,6 +566,7 @@ class UserState:
         self.awaiting_otp = False
         self.dob = None
         self.last_error = None
+        self.last_error_detail = None
         self.lock = threading.Lock()
     
     def reset(self):
@@ -568,6 +582,7 @@ class UserState:
             self.awaiting_otp = False
             self.dob = None
             self.last_error = None
+            self.last_error_detail = None
 
 user_sessions: Dict[str, UserState] = {}
 user_sessions_lock = threading.Lock()
@@ -602,31 +617,33 @@ def solve_captcha_with_capsolver(sitekey: str, page_url: str) -> Optional[str]:
         return None
 
 # ============================================
-# CHROMEDRIVER SETUP
+# CHROMEDRIVER SETUP - WITH ERROR DETAILS
 # ============================================
 
 def setup_chromedriver():
     try:
         chromedriver_autoinstaller.install()
         logger.info("✅ ChromeDriver installed")
-        return True
-    except:
+        return True, None
+    except Exception as e1:
+        logger.warning(f"⚠️ Autoinstall failed: {e1}")
         try:
             ChromeDriverManager().install()
             logger.info("✅ ChromeDriver installed via webdriver-manager")
-            return True
-        except:
-            logger.error("❌ ChromeDriver install failed!")
-            return False
+            return True, None
+        except Exception as e2:
+            logger.error(f"❌ ChromeDriver install failed: {e2}")
+            return False, str(e2)
 
 # ============================================
-# GMAIL BOT
+# GMAIL BOT - WITH ERROR DETAILS
 # ============================================
 
 class GmailBot:
     def __init__(self, proxy: str):
         self.proxy = proxy
         self.driver = None
+        self.setup_error = None
         self._setup_driver()
     
     def _setup_driver(self):
@@ -658,9 +675,13 @@ class GmailBot:
         try:
             service = Service()
             self.driver = webdriver.Chrome(service=service, options=options)
-        except:
-            service = Service(ChromeDriverManager().install())
-            self.driver = webdriver.Chrome(service=service, options=options)
+        except Exception as e1:
+            try:
+                service = Service(ChromeDriverManager().install())
+                self.driver = webdriver.Chrome(service=service, options=options)
+            except Exception as e2:
+                self.setup_error = f"Driver setup failed: {e2}"
+                return
         
         try:
             stealth(self.driver,
@@ -677,6 +698,12 @@ class GmailBot:
     
     def create_account(self, email_prefix: str, password: str, phone: str, otp_callback=None) -> tuple:
         try:
+            if self.setup_error:
+                return (False, None, f"SETUP_ERROR: {self.setup_error}")
+            
+            if not self.driver:
+                return (False, None, "DRIVER_NOT_INITIALIZED")
+            
             logger.info(f"📧 Creating: {email_prefix}@gmail.com")
             self.driver.get("https://accounts.google.com/signup")
             time.sleep(5)
@@ -762,7 +789,10 @@ class GmailBot:
             time.sleep(3)
             
             # PHONE
-            self.driver.find_element(By.ID, "phoneNumberId").send_keys(phone)
+            phone_input = WebDriverWait(self.driver, 20).until(
+                EC.presence_of_element_located((By.ID, "phoneNumberId"))
+            )
+            phone_input.send_keys(phone)
             next_btn = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))
             )
@@ -778,7 +808,10 @@ class GmailBot:
                     if token:
                         self.driver.execute_script(f"document.getElementById('g-recaptcha-response').innerHTML='{token}';")
                         time.sleep(2)
-            except:
+                    else:
+                        return (False, None, "CAPTCHA_FAILED")
+            except Exception as e:
+                # Captcha nahi hai toh ignore karo
                 pass
             
             # OTP
@@ -786,8 +819,14 @@ class GmailBot:
                 otp = otp_callback()
                 if not otp:
                     return (False, None, "OTP_TIMEOUT")
-                self.driver.find_element(By.ID, "code").send_keys(otp)
-                self.driver.find_element(By.XPATH, "//span[text()='Verify']").click()
+                otp_input = WebDriverWait(self.driver, 30).until(
+                    EC.presence_of_element_located((By.ID, "code"))
+                )
+                otp_input.send_keys(otp)
+                verify_btn = WebDriverWait(self.driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, "//span[text()='Verify']"))
+                )
+                verify_btn.click()
                 time.sleep(3)
                 
                 # CHECK: OTP invalid
@@ -800,14 +839,20 @@ class GmailBot:
             
             # SKIP RECOVERY
             try:
-                self.driver.find_element(By.XPATH, "//span[text()='Skip']").click()
+                skip_btn = WebDriverWait(self.driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, "//span[text()='Skip']"))
+                )
+                skip_btn.click()
                 time.sleep(2)
             except:
                 pass
             
             # AGREE
             try:
-                self.driver.find_element(By.XPATH, "//span[text()='I agree']").click()
+                agree_btn = WebDriverWait(self.driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, "//span[text()='I agree']"))
+                )
+                agree_btn.click()
                 time.sleep(3)
             except:
                 pass
@@ -815,17 +860,24 @@ class GmailBot:
             return (True, f"{email_prefix}@gmail.com", None)
             
         except Exception as e:
-            error = str(e)
-            if "username" in error.lower():
+            error_str = str(e)
+            tb = traceback.format_exc()
+            log_error(error_str, tb)
+            
+            if "username" in error_str.lower():
                 return (False, None, "USERNAME_TAKEN")
-            elif "password" in error.lower():
+            elif "password" in error_str.lower():
                 return (False, None, "PASSWORD_WEAK")
-            elif "captcha" in error.lower():
+            elif "captcha" in error_str.lower():
                 return (False, None, "CAPTCHA_FAILED")
-            elif "phone" in error.lower():
+            elif "phone" in error_str.lower():
                 return (False, None, "PHONE_INVALID")
+            elif "timeout" in error_str.lower():
+                return (False, None, "CONNECTION_TIMEOUT")
+            elif "proxy" in error_str.lower():
+                return (False, None, "PROXY_BLOCKED")
             else:
-                return (False, None, f"ERROR_{error[:50]}")
+                return (False, None, f"ERROR_{error_str[:50]}")
         finally:
             if self.driver:
                 try:
@@ -844,17 +896,19 @@ def get_user_state(user_id: str) -> UserState:
         return user_sessions[user_id]
 
 def get_failed_reason(error_code: str) -> str:
-    """Failed reason ka readable message"""
+    """Failed reason ka readable message with details"""
     reasons = {
         "USERNAME_TAKEN": "❌ Username already taken! Try different email prefix.",
         "PASSWORD_WEAK": "❌ Password is too weak! Use 8+ chars with letters, numbers, and special characters.",
         "OTP_INVALID": "❌ Invalid OTP! Please check and try again.",
         "OTP_TIMEOUT": "❌ OTP timeout! Please try again.",
-        "CAPTCHA_FAILED": "❌ Captcha solve failed! Please try again.",
+        "CAPTCHA_FAILED": "❌ Captcha solve failed! CapSolver may be out of credits.",
         "PHONE_INVALID": "❌ Phone number invalid or already used!",
         "PROXY_BLOCKED": "❌ Proxy blocked by Google! Trying next proxy...",
-        "CONNECTION_ERROR": "❌ Connection error! Please try again.",
-        "UNKNOWN": "❌ Unknown error! Please try again."
+        "CONNECTION_TIMEOUT": "❌ Connection timeout! Please try again.",
+        "SETUP_ERROR": "❌ ChromeDriver setup failed! Please check installation.",
+        "DRIVER_NOT_INITIALIZED": "❌ Browser driver not initialized! Please restart bot.",
+        "UNKNOWN": "❌ Unknown error! Check error_log.txt for details."
     }
     for key in reasons:
         if key in error_code.upper():
@@ -952,6 +1006,7 @@ async def make_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     state.retry_count = 0
     state.dob = generate_dob()
     state.last_error = None
+    state.last_error_detail = None
     
     await update.message.reply_text(
         f"📱 **Send Phone Number**\n\n"
@@ -1008,7 +1063,7 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
             
             await msg.edit_text(
                 f"🔄 **Attempt {state.retry_count}/{MAX_RETRIES}**\n"
-                f"🌐 Using proxy..."
+                f"🌐 Using proxy: {proxy[:40]}..."
             )
             
             try:
@@ -1071,22 +1126,33 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
                     )
                     
             except Exception as e:
+                error_detail = str(e)
+                tb = traceback.format_exc()
+                log_error(error_detail, tb)
+                state.last_error = f"EXCEPTION_{error_detail[:30]}"
                 proxy_manager.mark_failed(user_id, proxy)
                 await msg.edit_text(
-                    f"⚠️ Error: `{str(e)[:80]}`\n"
+                    f"⚠️ Error: `{error_detail[:80]}`\n"
                     f"🔄 Retrying..."
                 )
     
     if not success:
         state.step = "idle"
         final_reason = get_failed_reason(state.last_error or "UNKNOWN")
+        
+        # ✅ Detailed error message
+        error_detail_msg = ""
+        if state.last_error_detail:
+            error_detail_msg = f"\n\n📝 Details: `{state.last_error_detail[:100]}`"
+        
         await msg.edit_text(
             f"❌ **All attempts failed!**\n\n"
-            f"{final_reason}\n\n"
+            f"{final_reason}{error_detail_msg}\n\n"
             f"💡 Tips:\n"
             f"• Try a different phone number\n"
             f"• Try a different email prefix\n"
-            f"• Make sure password is strong (8+ chars)\n\n"
+            f"• Make sure password is strong (8+ chars)\n"
+            f"• Check error_log.txt for details\n\n"
             f"Try again with `/make`"
         )
 
@@ -1282,6 +1348,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f"Update {update} caused error {context.error}")
+    log_error(str(context.error), traceback.format_exc())
 
 # ============================================
 # MAIN
@@ -1289,7 +1356,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     print("\n" + "="*60)
-    print("🚀 GMAIL CREATOR BOT - COMPLETE FEATURES")
+    print("🚀 GMAIL CREATOR BOT - DETAILED ERROR LOGGING")
     print("="*60)
     print(f"👑 Owner: {', '.join(OWNERS)}")
     print(f"📊 Proxies Loaded: {len(PROXY_LIST)}")
@@ -1299,9 +1366,13 @@ def main():
     print(f"🧩 CapSolver: {'✅' if CAPSOLVER_AVAILABLE else '❌'}")
     print("="*60)
     print("🤖 Bot is running...")
+    print("📝 Error logs saved to: error_log.txt")
     print("="*60 + "\n")
     
-    setup_chromedriver()
+    # Setup ChromeDriver
+    success, error = setup_chromedriver()
+    if not success:
+        print(f"⚠️ ChromeDriver setup warning: {error}")
     
     application = Application.builder().token(BOT_TOKEN).build()
     
@@ -1318,7 +1389,12 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_error_handler(error_handler)
     
-    application.run_polling()
+    try:
+        application.run_polling()
+    except Exception as e:
+        log_error(str(e), traceback.format_exc())
+        print(f"❌ Fatal error: {e}")
+        print("Check error_log.txt for details")
 
 if __name__ == "__main__":
     main()
