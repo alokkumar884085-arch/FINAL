@@ -4,4 +4,3 @@ selenium-stealth==1.0.6
 webdriver-manager==4.0.1
 requests==2.31.0
 chromedriver-autoinstaller==0.6.3
-capsolver==1.0.0
