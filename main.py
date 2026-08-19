@@ -1,7 +1,7 @@
 # ============================================
 # GMAIL CREATOR BOT - PYTHON 3.11 COMPATIBLE
 # ============================================
-# TOKEN: 8879549452:AAHNvGlBHktN6L-kpUS7H3jp7X-ROwmk9c4
+# TOKEN: 8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec
 # OWNER: 8785590284
 # ============================================
 
@@ -36,7 +36,7 @@ import chromedriver_autoinstaller
 # CONFIGURATION
 # ============================================
 
-BOT_TOKEN = "8879549452:AAHNvGlBHktN6L-kpUS7H3jp7X-ROwmk9c4"
+BOT_TOKEN = "8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec"
 OWNERS = ["8785590284"]
 MAX_RETRIES = 20
 MAX_CONCURRENT_USERS = 5
