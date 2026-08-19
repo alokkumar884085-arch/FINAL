@@ -1,8 +1,5 @@
 # ============================================
-# GMAIL CREATOR BOT - WITH DETAILED ERROR LOGGING
-# ============================================
-# TOKEN: 8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec
-# OWNER: 8785590284
+# GMAIL BOT - MANUAL CAPTCHA SUPPORT
 # ============================================
 
 import asyncio
@@ -11,12 +8,11 @@ import re
 import time
 import json
 import logging
+import shutil
+import os
+import threading
 from datetime import datetime, timedelta
 from typing import Dict, Optional
-import threading
-import os
-import sys
-import traceback
 
 # Telegram
 from telegram import Update
@@ -31,16 +27,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium_stealth import stealth
 
-# Webdriver manager
 from webdriver_manager.chrome import ChromeDriverManager
 import chromedriver_autoinstaller
-
-# ✅ CAPSOLVER
-try:
-    import capsolver
-    CAPSOLVER_AVAILABLE = True
-except:
-    CAPSOLVER_AVAILABLE = False
 
 # ============================================
 # CONFIGURATION
@@ -49,13 +37,7 @@ except:
 BOT_TOKEN = "8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec"
 OWNERS = ["8785590284"]
 MAX_RETRIES = 20
-MAX_CONCURRENT_USERS = 3
 HEADLESS_MODE = True
-
-# ✅ CAPSOLVER API KEY
-CAPSOLVER_API_KEY = "CAP-AC9702EB716ED213465546D7C8FEAB0D8A164CAD5F477946D23946D0695C806D"
-if CAPSOLVER_AVAILABLE and CAPSOLVER_API_KEY:
-    capsolver.api_key = CAPSOLVER_API_KEY
 
 # ============================================
 # LOGGING
@@ -66,21 +48,6 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
-# ✅ ERROR LOG FILE
-ERROR_LOG_FILE = "error_log.txt"
-
-def log_error(error_msg: str, traceback_str: str = None):
-    """Error ko file mein log karo"""
-    try:
-        with open(ERROR_LOG_FILE, 'a') as f:
-            f.write(f"\n{'='*50}\n")
-            f.write(f"Time: {datetime.now().isoformat()}\n")
-            f.write(f"Error: {error_msg}\n")
-            if traceback_str:
-                f.write(f"Traceback: {traceback_str}\n")
-    except:
-        pass
 
 # ============================================
 # DOB GENERATOR (18+)
@@ -172,331 +139,21 @@ class ApprovalSystem:
         return self.approved_users
 
 # ============================================
-# PROXY LIST (300+)
+# PROXY LIST (Short but Working)
 # ============================================
 
 PROXY_LIST = [
-    "http://45.43.64.38:6296",
-    "http://65.111.3.44:3129",
-    "http://8.211.49.86:80",
-    "http://103.95.34.186:3128",
-    "http://162.214.74.29:3128",
-    "http://34.94.46.8:80",
-    "http://108.161.135.118:80",
-    "http://167.99.124.118:80",
-    "http://8.221.139.222:8080",
-    "http://8.221.141.88:5006",
-    "http://8.211.42.167:104",
-    "http://8.211.49.86:3129",
-    "http://8.211.51.115:9050",
-    "http://8.211.200.183:1000",
-    "http://8.215.112.214:7777",
-    "http://8.219.97.248:80",
-    "http://8.221.138.111:9080",
-    "http://8.221.141.88:8820",
-    "http://8.221.141.88:91",
-    "http://8.221.138.111:5060",
-    "http://8.211.42.167:9080",
-    "http://8.211.51.115:8081",
-    "http://8.211.51.115:4002",
-    "http://8.210.17.35:1311",
-    "http://8.210.17.35:8001",
-    "http://34.81.160.132:80",
-    "http://34.43.46.91:80",
-    "http://34.101.184.164:3128",
-    "http://52.34.243.150:8080",
-    "http://65.111.1.201:3129",
-    "http://65.111.3.44:3129",
-    "http://65.111.10.28:3129",
-    "http://65.111.12.145:3129",
-    "http://65.108.103.19:80",
-    "http://85.214.107.177:80",
-    "http://89.169.37.254:1080",
-    "http://89.116.78.80:5691",
-    "http://95.211.174.135:3128",
-    "http://103.43.191.71:8888",
-    "http://103.65.237.92:5678",
-    "http://103.83.87.114:9080",
-    "http://103.86.1.34:4145",
-    "http://103.88.169.106:33149",
-    "http://103.95.34.186:3128",
-    "http://103.102.13.107:8080",
-    "http://103.113.152.73:14158",
-    "http://103.118.127.222:4153",
-    "http://103.120.165.132:1080",
-    "http://103.122.64.163:8080",
-    "http://103.127.94.137:8080",
-    "http://103.129.127.244:8088",
-    "http://103.138.173.56:8087",
-    "http://103.142.69.169:8885",
-    "http://103.142.255.32:1080",
-    "http://103.153.247.74:8080",
-    "http://103.156.86.131:8080",
-    "http://103.160.40.254:8080",
-    "http://103.169.238.25:2021",
-    "http://103.171.232.96:8080",
-    "http://103.185.250.136:1080",
-    "http://103.197.188.63:1080",
-    "http://103.197.242.106:1080",
-    "http://103.237.102.191:11111",
-    "http://103.246.194.251:3128",
-    "http://112.78.187.186:8080",
-    "http://112.120.201.241:3128",
-    "http://113.192.1.66:8181",
-    "http://113.192.48.11:8080",
-    "http://114.130.175.18:8080",
-    "http://115.42.67.186:56534",
-    "http://115.74.157.21:1080",
-    "http://115.77.138.230:5170",
-    "http://115.85.74.114:5678",
-    "http://115.127.81.142:58080",
-    "http://116.105.22.7:1080",
-    "http://117.50.194.130:7890",
-    "http://117.102.86.146:8080",
-    "http://117.244.114.54:1080",
-    "http://118.99.72.222:1080",
-    "http://118.174.14.65:44336",
-    "http://119.18.147.118:8080",
-    "http://123.0.18.20:1452",
-    "http://124.41.225.101:1080",
-    "http://125.25.23.167:8080",
-    "http://125.228.143.207:4145",
-    "http://128.140.113.110:5678",
-    "http://130.17.20.51:1080",
-    "http://131.161.68.38:35944",
-    "http://135.181.150.19:9050",
-    "http://136.0.207.21:6598",
-    "http://138.3.218.141:54261",
-    "http://138.91.159.185:80",
-    "http://138.117.84.194:8080",
-    "http://138.121.15.230:999",
-    "http://138.128.247.206:9050",
-    "http://139.185.52.142:5222",
-    "http://140.82.62.31:50000",
-    "http://140.83.60.69:10800",
-    "http://140.238.241.74:1080",
-    "http://140.245.238.56:53",
-    "http://141.105.107.152:5678",
-    "http://142.54.161.98:17062",
-    "http://142.54.226.214:4145",
-    "http://142.54.239.1:4145",
-    "http://142.111.161.56:6427",
-    "http://144.24.111.128:3129",
-    "http://144.31.75.29:1080",
-    "http://144.91.121.61:1088",
-    "http://144.124.227.88:3128",
-    "http://145.220.226.12:8080",
-    "http://145.220.226.92:8080",
-    "http://145.220.226.209:8080",
-    "http://145.220.226.249:8080",
-    "http://146.103.3.64:7117",
-    "http://146.103.43.234:8118",
-    "http://146.103.56.23:5571",
-    "http://146.103.56.36:5584",
-    "http://146.103.56.204:5752",
-    "http://146.103.56.251:5799",
-    "http://147.45.60.136:1082",
-    "http://147.45.60.250:1082",
-    "http://147.45.66.117:1082",
-    "http://147.45.215.249:8443",
-    "http://147.45.225.141:10808",
-    "http://147.93.52.252:1081",
-    "http://147.93.141.97:10808",
-    "http://148.135.151.201:8452",
-    "http://149.57.17.102:5570",
-    "http://149.57.17.227:5695",
-    "http://149.57.17.251:5719",
-    "http://150.241.70.103:6666",
-    "http://151.80.33.14:9050",
-    "http://151.115.99.193:10006",
-    "http://151.242.116.132:8080",
-    "http://151.243.153.157:8118",
-    "http://151.248.19.97:8080",
-    "http://151.252.80.124:1080",
-    "http://153.51.241.38:999",
-    "http://153.80.240.37:8080",
-    "http://154.18.220.190:5678",
-    "http://154.27.196.39:999",
-    "http://154.113.195.161:5678",
-    "http://155.254.38.12:5688",
-    "http://155.254.38.36:5712",
-    "http://155.254.38.88:5764",
-    "http://156.238.250.51:8080",
-    "http://157.90.113.23:9052",
-    "http://157.230.178.216:40000",
-    "http://158.101.175.124:5566",
-    "http://158.247.216.192:7777",
-    "http://159.65.221.25:80",
-    "http://160.22.200.70:69",
-    "http://161.18.226.135:8080",
-    "http://162.214.74.29:3128",
-    "http://162.220.247.60:6655",
-    "http://163.61.70.4:9000",
-    "http://163.227.248.5:8818",
-    "http://164.52.216.51:8080",
-    "http://164.152.122.199:19100",
-    "http://165.0.136.30:8080",
-    "http://165.101.222.18:8080",
-    "http://165.154.7.156:8888",
-    "http://165.154.20.187:10808",
-    "http://165.165.178.142:4153",
-    "http://166.62.53.45:45842",
-    "http://166.88.235.113:5741",
-    "http://166.88.235.221:5849",
-    "http://167.99.124.118:80",
-    "http://169.159.128.73:1080",
-    "http://170.81.108.153:4153",
-    "http://171.22.180.10:10808",
-    "http://171.242.14.54:1080",
-    "http://171.248.213.16:1080",
-    "http://171.248.217.181:1080",
-    "http://171.254.1.231:1080",
-    "http://172.110.220.36:3128",
-    "http://172.234.12.236:8080",
-    "http://172.245.157.128:6713",
-    "http://173.211.68.149:6431",
-    "http://173.244.41.34:6218",
-    "http://173.244.41.150:6334",
-    "http://175.100.37.171:1080",
-    "http://175.100.103.170:1256",
-    "http://175.136.239.173:8181",
-    "http://175.139.233.78:80",
-    "http://175.139.233.79:80",
-    "http://176.61.151.123:80",
-    "http://176.107.80.85:1080",
-    "http://176.114.199.202:1080",
-    "http://176.120.28.106:8080",
-    "http://176.124.201.214:10808",
-    "http://176.226.227.148:10808",
-    "http://177.93.59.71:999",
-    "http://177.131.29.209:4153",
-    "http://177.131.125.144:5432",
-    "http://178.18.207.85:8888",
-    "http://178.104.91.17:80",
-    "http://178.156.206.253:8118",
-    "http://178.156.224.42:3128",
-    "http://178.252.180.59:10909",
-    "http://179.1.113.129:999",
-    "http://179.49.237.12:999",
-    "http://181.57.178.146:1080",
-    "http://181.78.17.131:999",
-    "http://181.119.84.219:8080",
-    "http://181.119.105.155:999",
-    "http://181.129.158.131:999",
-    "http://181.129.183.19:53281",
-    "http://181.143.145.98:8080",
-    "http://181.204.4.74:5678",
-    "http://182.16.171.42:51459",
-    "http://182.53.202.208:8080",
-    "http://182.253.40.39:8080",
-    "http://182.253.109.133:1256",
-    "http://183.89.217.91:4153",
-    "http://184.170.245.148:4145",
-    "http://184.174.24.21:6597",
-    "http://184.178.172.14:4145",
-    "http://184.181.217.201:4145",
-    "http://185.32.4.65:4153",
-    "http://185.32.4.126:4153",
-    "http://185.40.86.232:1080",
-    "http://185.108.76.197:9050",
-    "http://185.171.83.65:49153",
-    "http://185.188.217.166:8080",
-    "http://185.196.61.251:1080",
-    "http://185.226.204.74:5627",
-    "http://185.226.207.166:5715",
-    "http://185.226.207.213:5762",
-    "http://185.239.70.64:3129",
-    "http://186.31.197.3:8080",
-    "http://186.97.200.210:999",
-    "http://186.246.2.55:1085",
-    "http://188.143.166.52:80",
-    "http://188.191.18.66:1080",
-    "http://188.225.46.163:10808",
-    "http://189.202.204.53:1080",
-    "http://190.7.138.78:8080",
-    "http://190.58.248.86:80",
-    "http://190.60.60.37:8080",
-    "http://190.85.43.6:8080",
-    "http://190.93.188.197:1080",
-    "http://190.95.132.186:999",
-    "http://190.104.168.27:80",
-    "http://190.121.136.185:999",
-    "http://190.140.31.195:9900",
-    "http://191.101.174.133:6181",
-    "http://191.223.220.23:1080",
-    "http://192.111.134.10:4145",
-    "http://192.198.117.60:7653",
-    "http://192.252.216.81:4145",
-    "http://193.107.75.242:33500",
-    "http://193.107.236.183:3128",
-    "http://193.124.254.120:1080",
-    "http://193.233.86.198:1080",
-    "http://194.14.207.87:8001",
-    "http://194.87.83.113:3128",
-    "http://194.135.81.158:3128",
-    "http://194.164.125.208:57422",
-    "http://195.19.51.79:1080",
-    "http://195.26.224.135:80",
-    "http://195.133.65.238:10909",
-    "http://195.158.8.123:3128",
-    "http://195.225.116.15:4145",
-    "http://197.221.234.253:80",
-    "http://197.221.237.248:80",
-    "http://197.221.240.178:80",
-    "http://197.221.240.240:80",
-    "http://197.221.249.196:80",
-    "http://198.12.37.25:1080",
-    "http://198.46.241.201:6736",
-    "http://198.105.100.237:6488",
-    "http://198.105.122.186:6759",
-    "http://199.58.185.9:4145",
-    "http://199.102.104.70:4145",
-    "http://199.102.107.145:4145",
-    "http://199.180.9.79:6099",
-    "http://200.14.57.4:4153",
-    "http://200.63.95.13:1085",
-    "http://200.69.83.205:999",
-    "http://200.80.227.234:4145",
-    "http://200.111.104.59:3128",
-    "http://200.118.238.71:8080",
-    "http://200.125.40.38:5678",
-    "http://200.162.129.165:1080",
-    "http://200.188.246.122:60606",
-    "http://201.71.2.26:999",
-    "http://201.140.185.41:8081",
-    "http://201.184.177.10:4153",
-    "http://202.6.193.11:12345",
-    "http://202.62.42.230:1080",
-    "http://202.62.52.120:1080",
-    "http://202.62.62.113:1080",
-    "http://202.166.219.80:4153",
-    "http://203.174.15.83:36439",
-    "http://203.189.135.73:1080",
-    "http://203.189.159.241:1080",
-    "http://204.168.225.55:8888",
-    "http://206.206.64.223:6184",
-    "http://207.180.254.198:8080",
-    "http://208.102.24.225:8888",
-    "http://209.50.171.158:3129",
-    "http://212.31.100.138:4153",
-    "http://212.34.138.89:8080",
-    "http://212.46.242.185:1080",
-    "http://212.47.232.28:80",
-    "http://212.113.99.167:10800",
-    "http://212.118.38.225:3128",
-    "http://213.135.6.5:8080",
-    "http://213.136.92.91:1080",
-    "http://213.148.6.12:7777",
-    "http://213.169.231.191:5332",
-    "http://216.26.225.110:3129",
-    "http://216.26.235.236:3129",
-    "http://216.26.237.52:3129",
-    "http://216.48.177.32:8080",
-    "http://216.48.185.242:8080",
-    "http://217.113.235.181:443",
-    "http://217.154.71.75:3128",
-    "http://217.182.74.56:9100",
-    "http://219.65.73.81:80",
+    "http://45.43.64.38:6296", "http://65.111.3.44:3129", "http://8.211.49.86:80",
+    "http://103.95.34.186:3128", "http://162.214.74.29:3128", "http://34.94.46.8:80",
+    "http://108.161.135.118:80", "http://167.99.124.118:80", "http://8.221.139.222:8080",
+    "http://8.221.141.88:5006", "http://8.211.42.167:104", "http://8.211.49.86:3129",
+    "http://8.211.51.115:9050", "http://8.211.200.183:1000", "http://8.215.112.214:7777",
+    "http://8.219.97.248:80", "http://8.221.138.111:9080", "http://8.221.141.88:8820",
+    "http://8.221.141.88:91", "http://8.221.138.111:5060", "http://8.211.42.167:9080",
+    "http://8.211.51.115:8081", "http://8.211.51.115:4002", "http://8.210.17.35:1311",
+    "http://8.210.17.35:8001", "http://34.81.160.132:80", "http://34.43.46.91:80",
+    "http://34.101.184.164:3128", "http://52.34.243.150:8080", "http://65.111.1.201:3129",
+    "http://85.214.107.177:80", "http://89.169.37.254:1080", "http://95.211.174.135:3128",
 ]
 
 # ============================================
@@ -516,16 +173,13 @@ class ProxyManager:
             user_id = str(user_id)
             used = self.used_proxies.get(user_id, [])
             failed = self.failed_proxies.get(user_id, [])
-            
             available = [p for p in self.proxies if p not in used and p not in failed]
-            
             if not available:
                 if len(used) >= len(self.proxies):
                     self.used_proxies[user_id] = []
                     available = [p for p in self.proxies if p not in failed]
                 if not available:
                     return None
-            
             proxy = random.choice(available)
             self.used_proxies.setdefault(user_id, []).append(proxy)
             return proxy
@@ -536,16 +190,6 @@ class ProxyManager:
             self.failed_proxies.setdefault(user_id, []).append(proxy)
             if proxy in self.used_proxies.get(user_id, []):
                 self.used_proxies[user_id].remove(proxy)
-    
-    def mark_success(self, user_id: int, proxy: str):
-        pass
-    
-    def get_stats(self):
-        return {
-            'total': len(self.proxies),
-            'used': len(self.used_proxies),
-            'failed': len(self.failed_proxies)
-        }
 
 # ============================================
 # USER STATE
@@ -564,9 +208,10 @@ class UserState:
         self.otp_code = None
         self.start_time = datetime.now()
         self.awaiting_otp = False
+        self.awaiting_captcha = False
+        self.captcha_token = None
         self.dob = None
-        self.last_error = None
-        self.last_error_detail = None
+        self.driver = None
         self.lock = threading.Lock()
     
     def reset(self):
@@ -580,9 +225,15 @@ class UserState:
             self.retry_count = 0
             self.otp_code = None
             self.awaiting_otp = False
+            self.awaiting_captcha = False
+            self.captcha_token = None
             self.dob = None
-            self.last_error = None
-            self.last_error_detail = None
+            if self.driver:
+                try:
+                    self.driver.quit()
+                except:
+                    pass
+                self.driver = None
 
 user_sessions: Dict[str, UserState] = {}
 user_sessions_lock = threading.Lock()
@@ -591,63 +242,60 @@ otp_storage_lock = threading.Lock()
 
 approval_system = ApprovalSystem()
 proxy_manager = ProxyManager()
-user_semaphore = asyncio.Semaphore(MAX_CONCURRENT_USERS)
+user_semaphore = asyncio.Semaphore(3)
 
 # ============================================
-# CAPSOLVER CAPTCHA SOLVE
+# CHROMEDRIVER SETUP - RAILWAY FIXED
 # ============================================
 
-def solve_captcha_with_capsolver(sitekey: str, page_url: str) -> Optional[str]:
-    if not CAPSOLVER_AVAILABLE:
-        return None
-    try:
-        logger.info(f"🔍 Solving captcha with CapSolver...")
-        solution = capsolver.solve({
-            "type": "ReCaptchaV2TaskProxyless",
-            "websiteKey": sitekey,
-            "websiteURL": page_url
-        })
-        token = solution.get("gRecaptchaResponse")
-        if token:
-            logger.info(f"✅ CapSolver solved captcha!")
-            return token
-        return None
-    except Exception as e:
-        logger.error(f"❌ CapSolver Error: {e}")
-        return None
-
-# ============================================
-# CHROMEDRIVER SETUP - WITH ERROR DETAILS
-# ============================================
+def find_chrome_path() -> Optional[str]:
+    """Find Chrome/Chromium path on Railway"""
+    chrome_paths = [
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/chrome",
+        "/opt/google/chrome/chrome",
+    ]
+    for path in chrome_paths:
+        if os.path.exists(path):
+            logger.info(f"✅ Chrome found: {path}")
+            return path
+        if shutil.which(path):
+            logger.info(f"✅ Chrome found: {path}")
+            return path
+    return None
 
 def setup_chromedriver():
     try:
+        chrome_path = find_chrome_path()
+        if chrome_path:
+            os.environ["CHROME_BIN"] = chrome_path
+            logger.info(f"✅ Chrome binary set to: {chrome_path}")
         chromedriver_autoinstaller.install()
         logger.info("✅ ChromeDriver installed")
-        return True, None
-    except Exception as e1:
-        logger.warning(f"⚠️ Autoinstall failed: {e1}")
-        try:
-            ChromeDriverManager().install()
-            logger.info("✅ ChromeDriver installed via webdriver-manager")
-            return True, None
-        except Exception as e2:
-            logger.error(f"❌ ChromeDriver install failed: {e2}")
-            return False, str(e2)
+        return True
+    except Exception as e:
+        logger.error(f"❌ ChromeDriver setup failed: {e}")
+        return False
 
 # ============================================
-# GMAIL BOT - WITH ERROR DETAILS
+# GMAIL BOT - WITH MANUAL CAPTCHA
 # ============================================
 
 class GmailBot:
     def __init__(self, proxy: str):
         self.proxy = proxy
         self.driver = None
-        self.setup_error = None
         self._setup_driver()
     
     def _setup_driver(self):
         options = Options()
+        
+        chrome_path = find_chrome_path()
+        if chrome_path:
+            options.binary_location = chrome_path
         
         if self.proxy:
             if self.proxy.startswith(('http://', 'https://', 'socks5://')):
@@ -675,13 +323,9 @@ class GmailBot:
         try:
             service = Service()
             self.driver = webdriver.Chrome(service=service, options=options)
-        except Exception as e1:
-            try:
-                service = Service(ChromeDriverManager().install())
-                self.driver = webdriver.Chrome(service=service, options=options)
-            except Exception as e2:
-                self.setup_error = f"Driver setup failed: {e2}"
-                return
+        except:
+            service = Service(ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(service=service, options=options)
         
         try:
             stealth(self.driver,
@@ -696,19 +340,16 @@ class GmailBot:
         
         self.driver.set_page_load_timeout(30)
     
-    def create_account(self, email_prefix: str, password: str, phone: str, otp_callback=None) -> tuple:
+    def create_account(self, email_prefix: str, password: str, phone: str, otp_callback=None, captcha_callback=None) -> tuple:
         try:
-            if self.setup_error:
-                return (False, None, f"SETUP_ERROR: {self.setup_error}")
-            
             if not self.driver:
-                return (False, None, "DRIVER_NOT_INITIALIZED")
+                return (False, None, "Driver not initialized")
             
             logger.info(f"📧 Creating: {email_prefix}@gmail.com")
             self.driver.get("https://accounts.google.com/signup")
             time.sleep(5)
             
-            # NAME
+            # ========== NAME ==========
             first_name = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.ID, "firstName"))
             )
@@ -721,7 +362,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(3)
             
-            # DOB
+            # ========== DOB ==========
             dob = generate_dob()
             month_dropdown = WebDriverWait(self.driver, 20).until(
                 EC.element_to_be_clickable((By.ID, "month"))
@@ -751,7 +392,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(3)
             
-            # EMAIL
+            # ========== EMAIL ==========
             username = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.ID, "username"))
             )
@@ -770,25 +411,16 @@ class GmailBot:
             except:
                 pass
             
-            # PASSWORD
+            # ========== PASSWORD ==========
             self.driver.find_element(By.NAME, "Passwd").send_keys(password)
             self.driver.find_element(By.NAME, "PasswdAgain").send_keys(password)
-            
-            # CHECK: Password weak
-            try:
-                for el in self.driver.find_elements(By.XPATH, "//div[contains(text(), 'weak') or contains(text(), 'too short')]"):
-                    if el:
-                        return (False, None, "PASSWORD_WEAK")
-            except:
-                pass
-            
             next_btn = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))
             )
             next_btn.click()
             time.sleep(3)
             
-            # PHONE
+            # ========== PHONE ==========
             phone_input = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.ID, "phoneNumberId"))
             )
@@ -799,22 +431,30 @@ class GmailBot:
             next_btn.click()
             time.sleep(5)
             
-            # CAPTCHA
+            # ========== CAPTCHA HANDLING (MANUAL) ==========
             try:
                 captcha_elements = self.driver.find_elements(By.XPATH, "//div[@data-sitekey]")
-                if captcha_elements and CAPSOLVER_AVAILABLE:
+                if captcha_elements:
                     sitekey = captcha_elements[0].get_attribute('data-sitekey')
-                    token = solve_captcha_with_capsolver(sitekey, self.driver.current_url)
-                    if token:
-                        self.driver.execute_script(f"document.getElementById('g-recaptcha-response').innerHTML='{token}';")
-                        time.sleep(2)
-                    else:
-                        return (False, None, "CAPTCHA_FAILED")
+                    page_url = self.driver.current_url
+                    
+                    logger.info("🔍 Captcha detected! Waiting for manual solve...")
+                    
+                    # ✅ User ko captcha solve karne ka link bhejo
+                    if captcha_callback:
+                        captcha_token = captcha_callback(sitekey, page_url)
+                        if captcha_token:
+                            self.driver.execute_script(
+                                f"document.getElementById('g-recaptcha-response').innerHTML='{captcha_token}';"
+                            )
+                            time.sleep(2)
+                            logger.info("✅ Captcha token injected!")
+                        else:
+                            return (False, None, "CAPTCHA_TIMEOUT")
             except Exception as e:
-                # Captcha nahi hai toh ignore karo
-                pass
+                logger.warning(f"⚠️ Captcha handling error: {e}")
             
-            # OTP
+            # ========== OTP ==========
             if otp_callback:
                 otp = otp_callback()
                 if not otp:
@@ -829,7 +469,6 @@ class GmailBot:
                 verify_btn.click()
                 time.sleep(3)
                 
-                # CHECK: OTP invalid
                 try:
                     for error in self.driver.find_elements(By.XPATH, "//div[@role='alert']"):
                         if "incorrect" in error.text.lower() or "invalid" in error.text.lower():
@@ -837,7 +476,7 @@ class GmailBot:
                 except:
                     pass
             
-            # SKIP RECOVERY
+            # ========== SKIP RECOVERY ==========
             try:
                 skip_btn = WebDriverWait(self.driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, "//span[text()='Skip']"))
@@ -847,7 +486,7 @@ class GmailBot:
             except:
                 pass
             
-            # AGREE
+            # ========== AGREE ==========
             try:
                 agree_btn = WebDriverWait(self.driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, "//span[text()='I agree']"))
@@ -861,21 +500,12 @@ class GmailBot:
             
         except Exception as e:
             error_str = str(e)
-            tb = traceback.format_exc()
-            log_error(error_str, tb)
-            
             if "username" in error_str.lower():
                 return (False, None, "USERNAME_TAKEN")
             elif "password" in error_str.lower():
                 return (False, None, "PASSWORD_WEAK")
-            elif "captcha" in error_str.lower():
-                return (False, None, "CAPTCHA_FAILED")
             elif "phone" in error_str.lower():
                 return (False, None, "PHONE_INVALID")
-            elif "timeout" in error_str.lower():
-                return (False, None, "CONNECTION_TIMEOUT")
-            elif "proxy" in error_str.lower():
-                return (False, None, "PROXY_BLOCKED")
             else:
                 return (False, None, f"ERROR_{error_str[:50]}")
         finally:
@@ -896,19 +526,14 @@ def get_user_state(user_id: str) -> UserState:
         return user_sessions[user_id]
 
 def get_failed_reason(error_code: str) -> str:
-    """Failed reason ka readable message with details"""
     reasons = {
         "USERNAME_TAKEN": "❌ Username already taken! Try different email prefix.",
         "PASSWORD_WEAK": "❌ Password is too weak! Use 8+ chars with letters, numbers, and special characters.",
         "OTP_INVALID": "❌ Invalid OTP! Please check and try again.",
         "OTP_TIMEOUT": "❌ OTP timeout! Please try again.",
-        "CAPTCHA_FAILED": "❌ Captcha solve failed! CapSolver may be out of credits.",
         "PHONE_INVALID": "❌ Phone number invalid or already used!",
-        "PROXY_BLOCKED": "❌ Proxy blocked by Google! Trying next proxy...",
-        "CONNECTION_TIMEOUT": "❌ Connection timeout! Please try again.",
-        "SETUP_ERROR": "❌ ChromeDriver setup failed! Please check installation.",
-        "DRIVER_NOT_INITIALIZED": "❌ Browser driver not initialized! Please restart bot.",
-        "UNKNOWN": "❌ Unknown error! Check error_log.txt for details."
+        "CAPTCHA_TIMEOUT": "❌ Captcha solve timeout! Please try again.",
+        "UNKNOWN": "❌ Unknown error! Please try again."
     }
     for key in reasons:
         if key in error_code.upper():
@@ -926,34 +551,32 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if approval_system.is_owner(user_id):
         await update.message.reply_text(
             "👑 **OWNER ACCESS**\n\n"
-            "✅ /make - Create Gmail\n"
-            "✅ /approve - Approve user\n"
-            "✅ /reject - Reject user\n"
-            "✅ /remove - Remove user\n"
-            "✅ /pending - Pending users\n"
-            "✅ /approved - Approved users\n"
-            "✅ /stats - Statistics\n"
-            "✅ /active - Active users\n"
-            "✅ /cancel - Cancel"
+            "/make - Create Gmail\n"
+            "/approve - Approve user\n"
+            "/reject - Reject user\n"
+            "/remove - Remove user\n"
+            "/pending - Pending users\n"
+            "/approved - Approved users\n"
+            "/stats - Statistics\n"
+            "/captcha YOUR_CODE - Submit manual captcha\n"
+            "/cancel - Cancel"
         )
         return
     
     if approval_system.is_approved(user_id):
         await update.message.reply_text(
             "✅ **ACCESS GRANTED**\n\n"
-            "✅ /make - Create Gmail\n"
-            "✅ /cancel - Cancel\n"
-            "✅ /stats - Statistics"
+            "/make - Create Gmail\n"
+            "/captcha YOUR_CODE - Submit manual captcha\n"
+            "/cancel - Cancel\n"
+            "/stats - Statistics"
         )
         return
     
     approval_system.request_access(user_id, username)
     for owner_id in OWNERS:
         try:
-            await context.bot.send_message(
-                owner_id,
-                f"🔔 New Request\nUser: `{user_id}`\n/approve {user_id}"
-            )
+            await context.bot.send_message(owner_id, f"🔔 New Request\nUser: `{user_id}`\n/approve {user_id}")
         except:
             pass
     await update.message.reply_text("⏳ **Request Sent!** Waiting for owner approval.")
@@ -969,27 +592,11 @@ async def make_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "❌ **Wrong Format!**\n\n"
             "Use: `/make name email password`\n"
-            "Example: `/make rahul rahul.kumar MyPass@123`\n\n"
-            "OR\n\n"
-            "Use: `/make name|email|password`\n"
-            "Example: `/make rahul|rahul.kumar|MyPass@123`"
+            "Example: `/make rahul rahul.kumar MyPass@123`"
         )
         return
     
-    # Support both formats
-    full_text = " ".join(context.args)
-    if "|" in full_text:
-        parts = full_text.split("|")
-        if len(parts) == 3:
-            name, email, password = parts[0].strip(), parts[1].strip(), parts[2].strip()
-        else:
-            await update.message.reply_text("❌ Invalid format!")
-            return
-    else:
-        if len(context.args) != 3:
-            await update.message.reply_text("❌ Use: `/make name email password`")
-            return
-        name, email, password = context.args[0], context.args[1], context.args[2]
+    name, email, password = context.args[0], context.args[1], context.args[2]
     
     if len(email) < 6:
         await update.message.reply_text("❌ Email too short! Min 6 chars.")
@@ -1005,8 +612,6 @@ async def make_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     state.step = "waiting_phone"
     state.retry_count = 0
     state.dob = generate_dob()
-    state.last_error = None
-    state.last_error_detail = None
     
     await update.message.reply_text(
         f"📱 **Send Phone Number**\n\n"
@@ -1038,10 +643,34 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📱 `{phone}`\n"
         f"📧 `{state.email_prefix}@gmail.com`\n"
         f"🎂 DOB: `{state.dob['full']}` (18+)\n"
-        f"🔄 Trying up to {MAX_RETRIES} proxies..."
+        f"🔄 Trying proxies..."
     )
     
     await create_account_with_retry(update, context, msg)
+
+async def captcha_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """User se manual captcha code lena"""
+    user_id = str(update.effective_user.id)
+    args = context.args
+    
+    if not args:
+        await update.message.reply_text(
+            "❌ Please provide the captcha token.\n"
+            "Example: `/captcha 03AGdBq26...`"
+        )
+        return
+    
+    token = args[0]
+    state = get_user_state(user_id)
+    
+    if not state.awaiting_captcha:
+        await update.message.reply_text("❌ No captcha request pending!")
+        return
+    
+    state.captcha_token = token
+    state.awaiting_captcha = False
+    
+    await update.message.reply_text("✅ Captcha token received! Continuing...")
 
 async def create_account_with_retry(update: Update, context: ContextTypes.DEFAULT_TYPE, msg):
     user_id = str(update.effective_user.id)
@@ -1061,14 +690,13 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
                 await msg.edit_text("❌ No proxies available!")
                 return
             
-            await msg.edit_text(
-                f"🔄 **Attempt {state.retry_count}/{MAX_RETRIES}**\n"
-                f"🌐 Using proxy: {proxy[:40]}..."
-            )
+            await msg.edit_text(f"🔄 **Attempt {state.retry_count}/{MAX_RETRIES}**\n🌐 Using proxy...")
             
             try:
                 otp_received = asyncio.Event()
                 otp_value = None
+                captcha_received = asyncio.Event()
+                captcha_value = None
                 
                 async def get_otp():
                     nonlocal otp_value
@@ -1080,28 +708,52 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
                         f"⏳ 120 seconds\n"
                         f"Type `/cancel` to abort"
                     )
-                    
                     try:
                         await asyncio.wait_for(otp_received.wait(), timeout=120)
                         return otp_value
                     except:
                         return None
                 
-                # Create Gmail
+                async def get_captcha(sitekey, page_url):
+                    nonlocal captcha_value
+                    state.awaiting_captcha = True
+                    captcha_received.clear()
+                    
+                    # ✅ User ko captcha link bhejo
+                    await context.bot.send_message(
+                        user_id,
+                        f"🔍 **CAPTCHA REQUIRED!**\n\n"
+                        f"Sitekey: `{sitekey}`\n"
+                        f"Page URL: {page_url}\n\n"
+                        f"Please solve the captcha manually:\n"
+                        f"1. Open this link: [Google Sign-up](https://accounts.google.com/signup)\n"
+                        f"2. Complete the captcha\n"
+                        f"3. Submit the token using:\n"
+                        f"`/captcha YOUR_TOKEN`\n\n"
+                        f"⏳ You have 120 seconds.\n"
+                        f"Type `/cancel` to abort"
+                    )
+                    
+                    try:
+                        await asyncio.wait_for(captcha_received.wait(), timeout=120)
+                        return captcha_value
+                    except:
+                        return None
+                
                 bot = GmailBot(proxy)
                 result = await asyncio.to_thread(
                     bot.create_account,
                     state.email_prefix,
                     state.password,
                     state.phone,
-                    get_otp
+                    get_otp,
+                    get_captcha
                 )
                 
                 if result[0]:
                     success = True
                     state.created_email = result[1]
                     state.step = "done"
-                    proxy_manager.mark_success(user_id, proxy)
                     
                     await msg.edit_text(
                         f"✅ **ACCOUNT CREATED!** 🎉\n\n"
@@ -1116,43 +768,23 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
                     error_code = result[2] if len(result) > 2 else "UNKNOWN"
                     state.last_error = error_code
                     proxy_manager.mark_failed(user_id, proxy)
-                    
-                    # ✅ Failed reason show karega
                     reason = get_failed_reason(error_code)
-                    await msg.edit_text(
-                        f"❌ Attempt {state.retry_count} failed\n"
-                        f"{reason}\n"
-                        f"🔄 Trying next proxy..."
-                    )
+                    await msg.edit_text(f"❌ Attempt {state.retry_count} failed\n{reason}\n🔄 Trying next proxy...")
                     
             except Exception as e:
-                error_detail = str(e)
-                tb = traceback.format_exc()
-                log_error(error_detail, tb)
-                state.last_error = f"EXCEPTION_{error_detail[:30]}"
                 proxy_manager.mark_failed(user_id, proxy)
-                await msg.edit_text(
-                    f"⚠️ Error: `{error_detail[:80]}`\n"
-                    f"🔄 Retrying..."
-                )
+                await msg.edit_text(f"⚠️ Error: `{str(e)[:80]}`\n🔄 Retrying...")
     
     if not success:
         state.step = "idle"
         final_reason = get_failed_reason(state.last_error or "UNKNOWN")
-        
-        # ✅ Detailed error message
-        error_detail_msg = ""
-        if state.last_error_detail:
-            error_detail_msg = f"\n\n📝 Details: `{state.last_error_detail[:100]}`"
-        
         await msg.edit_text(
             f"❌ **All attempts failed!**\n\n"
-            f"{final_reason}{error_detail_msg}\n\n"
+            f"{final_reason}\n\n"
             f"💡 Tips:\n"
             f"• Try a different phone number\n"
             f"• Try a different email prefix\n"
-            f"• Make sure password is strong (8+ chars)\n"
-            f"• Check error_log.txt for details\n\n"
+            f"• Make sure password is strong (8+ chars)\n\n"
             f"Try again with `/make`"
         )
 
@@ -1185,11 +817,9 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not approval_system.is_owner(str(update.effective_user.id)):
         await update.message.reply_text("❌ Only owner!")
         return
-    
     if not context.args:
         await update.message.reply_text("❌ Usage: `/approve user_id`")
         return
-    
     target_id = context.args[0]
     if approval_system.approve_user(target_id):
         await update.message.reply_text(f"✅ User `{target_id}` approved!")
@@ -1204,11 +834,9 @@ async def reject_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not approval_system.is_owner(str(update.effective_user.id)):
         await update.message.reply_text("❌ Only owner!")
         return
-    
     if not context.args:
         await update.message.reply_text("❌ Usage: `/reject user_id`")
         return
-    
     target_id = context.args[0]
     if approval_system.reject_user(target_id):
         await update.message.reply_text(f"❌ User `{target_id}` rejected!")
@@ -1223,11 +851,9 @@ async def remove_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not approval_system.is_owner(str(update.effective_user.id)):
         await update.message.reply_text("❌ Only owner!")
         return
-    
     if not context.args:
         await update.message.reply_text("❌ Usage: `/remove user_id`")
         return
-    
     target_id = context.args[0]
     if approval_system.remove_user(target_id):
         await update.message.reply_text(f"✅ User `{target_id}` removed!")
@@ -1242,49 +868,26 @@ async def pending_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not approval_system.is_owner(str(update.effective_user.id)):
         await update.message.reply_text("❌ Only owner!")
         return
-    
     pending = approval_system.get_pending_list()
     if not pending:
         await update.message.reply_text("📭 No pending requests.")
         return
-    
     msg = "📋 **Pending Users**\n\n"
     for uid, data in pending.items():
         msg += f"• `{uid}` - @{data.get('username', 'unknown')}\n"
-    await update.message.reply_text(msg + "\nUse `/approve user_id` or `/reject user_id`")
+    await update.message.reply_text(msg)
 
 async def approved_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not approval_system.is_owner(str(update.effective_user.id)):
         await update.message.reply_text("❌ Only owner!")
         return
-    
     approved = approval_system.get_approved_list()
     if not approved:
         await update.message.reply_text("📭 No approved users.")
         return
-    
     msg = "✅ **Approved Users**\n\n"
     for uid, data in approved.items():
         msg += f"• `{uid}` - @{data.get('username', 'unknown')}\n"
-    await update.message.reply_text(msg + "\nUse `/remove user_id` to revoke")
-
-async def active_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not approval_system.is_owner(str(update.effective_user.id)):
-        await update.message.reply_text("❌ Only owner!")
-        return
-    
-    with user_sessions_lock:
-        active_users = list(user_sessions.keys())
-    
-    if not active_users:
-        await update.message.reply_text("No active users.")
-        return
-    
-    msg = "🟢 **Active Users**\n\n"
-    for uid in active_users:
-        state = get_user_state(uid)
-        step = state.step if state else "idle"
-        msg += f"• `{uid}` - {step}\n"
     await update.message.reply_text(msg)
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1293,16 +896,12 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Not approved!")
         return
     
-    proxy_stats = proxy_manager.get_stats()
     with user_sessions_lock:
         active_count = len(user_sessions)
         creating_count = sum(1 for s in user_sessions.values() if s.step == "creating")
     
     msg = f"📊 **Bot Statistics**\n\n"
-    msg += f"**Proxies:**\n"
-    msg += f"• Total: {proxy_stats['total']}\n"
-    msg += f"• Used: {proxy_stats['used']}\n"
-    msg += f"• Failed: {proxy_stats['failed']}\n\n"
+    msg += f"**Proxies:** {len(PROXY_LIST)}\n\n"
     msg += f"**Users:**\n"
     msg += f"• Approved: {len(approval_system.get_approved_list())}\n"
     msg += f"• Pending: {len(approval_system.get_pending_list())}\n"
@@ -1314,11 +913,9 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     state = get_user_state(user_id)
     state.reset()
-    
     with otp_storage_lock:
         if user_id in otp_storage:
             del otp_storage[user_id]
-    
     await update.message.reply_text("❌ **Cancelled!** Send `/make` to start fresh.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1342,13 +939,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "❌ I don't understand.\n\n"
         "Use:\n"
         "/make - Create Gmail\n"
+        "/captcha TOKEN - Submit captcha\n"
         "/cancel - Cancel\n"
         "/stats - Statistics"
     )
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f"Update {update} caused error {context.error}")
-    log_error(str(context.error), traceback.format_exc())
 
 # ============================================
 # MAIN
@@ -1356,31 +953,25 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     print("\n" + "="*60)
-    print("🚀 GMAIL CREATOR BOT - DETAILED ERROR LOGGING")
+    print("🚀 GMAIL CREATOR BOT - MANUAL CAPTCHA")
     print("="*60)
     print(f"👑 Owner: {', '.join(OWNERS)}")
-    print(f"📊 Proxies Loaded: {len(PROXY_LIST)}")
-    print(f"✅ Approved: {len(approval_system.get_approved_list())}")
-    print(f"⏳ Pending: {len(approval_system.get_pending_list())}")
+    print(f"📊 Proxies: {len(PROXY_LIST)}")
     print(f"🎯 Headless: {HEADLESS_MODE}")
-    print(f"🧩 CapSolver: {'✅' if CAPSOLVER_AVAILABLE else '❌'}")
     print("="*60)
     print("🤖 Bot is running...")
-    print("📝 Error logs saved to: error_log.txt")
+    print("📝 Manual Captcha Mode: User will solve captcha manually")
     print("="*60 + "\n")
     
-    # Setup ChromeDriver
-    success, error = setup_chromedriver()
-    if not success:
-        print(f"⚠️ ChromeDriver setup warning: {error}")
+    setup_chromedriver()
     
     application = Application.builder().token(BOT_TOKEN).build()
     
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("make", make_command))
+    application.add_handler(CommandHandler("captcha", captcha_command))
     application.add_handler(CommandHandler("cancel", cancel))
     application.add_handler(CommandHandler("stats", stats_command))
-    application.add_handler(CommandHandler("active", active_command))
     application.add_handler(CommandHandler("approve", approve_command))
     application.add_handler(CommandHandler("reject", reject_command))
     application.add_handler(CommandHandler("remove", remove_command))
@@ -1389,12 +980,7 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_error_handler(error_handler)
     
-    try:
-        application.run_polling()
-    except Exception as e:
-        log_error(str(e), traceback.format_exc())
-        print(f"❌ Fatal error: {e}")
-        print("Check error_log.txt for details")
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
