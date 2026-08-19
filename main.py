@@ -1,8 +1,9 @@
 # ============================================
-# GMAIL CREATOR BOT - PYTHON 3.11 COMPATIBLE
+# GMAIL CREATOR BOT - CAPSOLVER INTEGRATED
 # ============================================
 # TOKEN: 8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec
 # OWNER: 8785590284
+# CAPSOLVER KEY: CAP-AC9702EB716ED213465546D7C8FEAB0D8A164CAD5F477946D23946D0695C806D
 # ============================================
 
 import asyncio
@@ -14,6 +15,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 import threading
+import os
 
 # Telegram
 from telegram import Update
@@ -32,8 +34,11 @@ from selenium_stealth import stealth
 from webdriver_manager.chrome import ChromeDriverManager
 import chromedriver_autoinstaller
 
+# ✅ CAPSOLVER
+import capsolver
+
 # ============================================
-# CONFIGURATION
+# CONFIGURATION - NEW TOKEN
 # ============================================
 
 BOT_TOKEN = "8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec"
@@ -41,6 +46,127 @@ OWNERS = ["8785590284"]
 MAX_RETRIES = 20
 MAX_CONCURRENT_USERS = 5
 HEADLESS_MODE = True
+
+# ✅ CAPSOLVER API KEY
+CAPSOLVER_API_KEY = "CAP-AC9702EB716ED213465546D7C8FEAB0D8A164CAD5F477946D23946D0695C806D"
+capsolver.api_key = CAPSOLVER_API_KEY
+
+# ============================================
+# DOB GENERATOR (18+)
+# ============================================
+
+def generate_dob() -> Dict:
+    now = datetime.now()
+    age_years = random.randint(18, 50)
+    dob = now - timedelta(days=age_years * 365 + random.randint(0, 365))
+    return {
+        'month': str(dob.month).zfill(2),
+        'day': str(dob.day).zfill(2),
+        'year': str(dob.year),
+        'month_int': dob.month,
+        'day_int': dob.day,
+        'year_int': dob.year,
+        'full': f"{dob.month}/{dob.day}/{dob.year}",
+        'age': age_years
+    }
+
+# ============================================
+# CAPSOLVER CAPTCHA SOLVE FUNCTION
+# ============================================
+
+def solve_captcha_with_capsolver(sitekey: str, page_url: str) -> Optional[str]:
+    """CapSolver se captcha solve karo"""
+    try:
+        logger.info(f"🔍 Solving captcha with CapSolver...")
+        logger.info(f"   Sitekey: {sitekey}")
+        
+        solution = capsolver.solve({
+            "type": "ReCaptchaV2TaskProxyless",
+            "websiteKey": sitekey,
+            "websiteURL": page_url
+        })
+        
+        token = solution.get("gRecaptchaResponse")
+        if token:
+            logger.info(f"✅ CapSolver solved captcha successfully!")
+            return token
+        else:
+            logger.error(f"❌ CapSolver returned no token")
+            return None
+            
+    except Exception as e:
+        logger.error(f"❌ CapSolver Error: {e}")
+        return None
+
+# ============================================
+# USER APPROVAL SYSTEM
+# ============================================
+
+class ApprovalSystem:
+    def __init__(self):
+        self.approved_users = self._load('approved_users.json')
+        self.pending_users = self._load('pending_users.json')
+    
+    def _load(self, file):
+        try:
+            with open(file, 'r') as f:
+                return json.load(f)
+        except:
+            return {}
+    
+    def _save(self, file, data):
+        with open(file, 'w') as f:
+            json.dump(data, f, indent=2)
+    
+    def is_owner(self, user_id: str) -> bool:
+        return str(user_id) in OWNERS
+    
+    def is_approved(self, user_id: str) -> bool:
+        return str(user_id) in self.approved_users or self.is_owner(str(user_id))
+    
+    def request_access(self, user_id: str, username: str = None):
+        user_id = str(user_id)
+        if user_id not in self.pending_users and not self.is_approved(user_id):
+            self.pending_users[user_id] = {
+                'username': username or user_id,
+                'requested_at': datetime.now().isoformat()
+            }
+            self._save('pending_users.json', self.pending_users)
+            return True
+        return False
+    
+    def approve_user(self, user_id: str) -> bool:
+        user_id = str(user_id)
+        if user_id in self.pending_users:
+            self.approved_users[user_id] = self.pending_users[user_id]
+            self.approved_users[user_id]['approved_at'] = datetime.now().isoformat()
+            del self.pending_users[user_id]
+            self._save('approved_users.json', self.approved_users)
+            self._save('pending_users.json', self.pending_users)
+            return True
+        return False
+    
+    def reject_user(self, user_id: str) -> bool:
+        user_id = str(user_id)
+        if user_id in self.pending_users:
+            del self.pending_users[user_id]
+            self._save('pending_users.json', self.pending_users)
+            return True
+        return False
+    
+    def remove_user(self, user_id: str) -> bool:
+        user_id = str(user_id)
+        if user_id in self.approved_users:
+            del self.approved_users[user_id]
+            self._save('approved_users.json', self.approved_users)
+            return True
+        return False
+    
+    def get_pending_list(self):
+        return self.pending_users
+    
+    def get_approved_list(self):
+        return self.approved_users
 
 # ============================================
 # PROXY LIST
@@ -77,7 +203,6 @@ PROXY_LIST = [
     "http://34.101.184.164:3128",
     "http://52.34.243.150:8080",
     "http://65.111.1.201:3129",
-    "http://65.111.3.44:3129",
     "http://65.111.10.28:3129",
     "http://65.111.12.145:3129",
     "http://65.108.103.19:80",
@@ -90,7 +215,6 @@ PROXY_LIST = [
     "http://103.83.87.114:9080",
     "http://103.86.1.34:4145",
     "http://103.88.169.106:33149",
-    "http://103.95.34.186:3128",
     "http://103.102.13.107:8080",
     "http://103.113.152.73:14158",
     "http://103.118.127.222:4153",
@@ -371,105 +495,6 @@ PROXY_LIST = [
 ]
 
 # ============================================
-# LOGGING
-# ============================================
-
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-
-# ============================================
-# DOB GENERATOR
-# ============================================
-
-def generate_dob() -> Dict:
-    now = datetime.now()
-    age_years = random.randint(18, 50)
-    dob = now - timedelta(days=age_years * 365 + random.randint(0, 365))
-    return {
-        'month': str(dob.month).zfill(2),
-        'day': str(dob.day).zfill(2),
-        'year': str(dob.year),
-        'month_int': dob.month,
-        'day_int': dob.day,
-        'year_int': dob.year,
-        'full': f"{dob.month}/{dob.day}/{dob.year}",
-        'age': age_years
-    }
-
-# ============================================
-# APPROVAL SYSTEM
-# ============================================
-
-class ApprovalSystem:
-    def __init__(self):
-        self.approved_users = self._load('approved_users.json')
-        self.pending_users = self._load('pending_users.json')
-    
-    def _load(self, file):
-        try:
-            with open(file, 'r') as f:
-                return json.load(f)
-        except:
-            return {}
-    
-    def _save(self, file, data):
-        with open(file, 'w') as f:
-            json.dump(data, f, indent=2)
-    
-    def is_owner(self, user_id: str) -> bool:
-        return str(user_id) in OWNERS
-    
-    def is_approved(self, user_id: str) -> bool:
-        return str(user_id) in self.approved_users or self.is_owner(str(user_id))
-    
-    def request_access(self, user_id: str, username: str = None):
-        user_id = str(user_id)
-        if user_id not in self.pending_users and not self.is_approved(user_id):
-            self.pending_users[user_id] = {
-                'username': username or user_id,
-                'requested_at': datetime.now().isoformat()
-            }
-            self._save('pending_users.json', self.pending_users)
-            return True
-        return False
-    
-    def approve_user(self, user_id: str) -> bool:
-        user_id = str(user_id)
-        if user_id in self.pending_users:
-            self.approved_users[user_id] = self.pending_users[user_id]
-            self.approved_users[user_id]['approved_at'] = datetime.now().isoformat()
-            del self.pending_users[user_id]
-            self._save('approved_users.json', self.approved_users)
-            self._save('pending_users.json', self.pending_users)
-            return True
-        return False
-    
-    def reject_user(self, user_id: str) -> bool:
-        user_id = str(user_id)
-        if user_id in self.pending_users:
-            del self.pending_users[user_id]
-            self._save('pending_users.json', self.pending_users)
-            return True
-        return False
-    
-    def remove_user(self, user_id: str) -> bool:
-        user_id = str(user_id)
-        if user_id in self.approved_users:
-            del self.approved_users[user_id]
-            self._save('approved_users.json', self.approved_users)
-            return True
-        return False
-    
-    def get_pending_list(self):
-        return self.pending_users
-    
-    def get_approved_list(self):
-        return self.approved_users
-
-# ============================================
 # PROXY MANAGER
 # ============================================
 
@@ -479,7 +504,7 @@ class ProxyManager:
         self.used_proxies = {}
         self.failed_proxies = {}
         self.lock = threading.Lock()
-        logger.info(f"✅ Loaded {len(self.proxies)} proxies")
+        logging.info(f"✅ Loaded {len(self.proxies)} proxies")
     
     def get_proxy(self, user_id: int) -> Optional[str]:
         with self.lock:
@@ -506,13 +531,6 @@ class ProxyManager:
             self.failed_proxies.setdefault(user_id, []).append(proxy)
             if proxy in self.used_proxies.get(user_id, []):
                 self.used_proxies[user_id].remove(proxy)
-    
-    def get_stats(self):
-        return {
-            'total': len(self.proxies),
-            'used': len(self.used_proxies),
-            'failed': len(self.failed_proxies)
-        }
 
 # ============================================
 # USER STATE
@@ -557,6 +575,16 @@ proxy_manager = ProxyManager()
 user_semaphore = asyncio.Semaphore(MAX_CONCURRENT_USERS)
 
 # ============================================
+# LOGGING SETUP
+# ============================================
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# ============================================
 # CHROMEDRIVER SETUP
 # ============================================
 
@@ -573,7 +601,7 @@ def setup_chromedriver():
             logger.error(f"❌ Both install methods failed: {e2}")
 
 # ============================================
-# GMAIL BOT
+# GMAIL BOT WITH CAPSOLVER
 # ============================================
 
 class GmailBot:
@@ -631,7 +659,7 @@ class GmailBot:
             self.driver.get("https://accounts.google.com/signup")
             time.sleep(5)
             
-            # NAME
+            # ========== NAME ==========
             first_name = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.ID, "firstName"))
             )
@@ -645,7 +673,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(3)
             
-            # DOB
+            # ========== DOB (18+) ==========
             dob = generate_dob()
             logger.info(f"🎂 DOB: {dob['full']} (Age: {dob['age']})")
             
@@ -682,7 +710,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(3)
             
-            # EMAIL
+            # ========== EMAIL ==========
             username = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.ID, "username"))
             )
@@ -694,8 +722,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(3)
             
-            # CHECK: Username taken
-            try:
+            # CHECK: Username taken            try:
                 error_elements = self.driver.find_elements(By.XPATH, "//div[@role='alert']")
                 for error in error_elements:
                     error_text = error.text.lower()
@@ -704,7 +731,7 @@ class GmailBot:
             except:
                 pass
             
-            # PASSWORD
+            # ========== PASSWORD ==========
             password_field = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.NAME, "Passwd"))
             )
@@ -726,7 +753,7 @@ class GmailBot:
             next_btn.click()
             time.sleep(3)
             
-            # PHONE
+            # ========== PHONE ==========
             phone_input = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.ID, "phoneNumberId"))
             )
@@ -738,7 +765,39 @@ class GmailBot:
             next_btn.click()
             time.sleep(5)
             
-            # OTP
+            # ========== CAPTCHA DETECT & SOLVE ==========
+            try:
+                # Captcha detect karo
+                captcha_element = self.driver.find_elements(By.XPATH, "//div[@data-sitekey]")
+                
+                if captcha_element:
+                    logger.info("🔍 Captcha detected! Solving with CapSolver...")
+                    
+                    sitekey = captcha_element[0].get_attribute('data-sitekey')
+                    page_url = self.driver.current_url
+                    
+                    # CapSolver se solve karo
+                    captcha_token = solve_captcha_with_capsolver(sitekey, page_url)
+                    
+                    if captcha_token:
+                        # Token inject karo
+                        self.driver.execute_script(
+                            f"document.getElementById('g-recaptcha-response').innerHTML='{captcha_token}';"
+                        )
+                        self.driver.execute_script(
+                            "if (typeof ___grecaptcha_cfg !== 'undefined') { "
+                            "for (var i = 0; i < ___grecaptcha_cfg.clients.length; i++) { "
+                            "___grecaptcha_cfg.clients[i].callback('" + captcha_token + "'); } }"
+                        )
+                        time.sleep(2)
+                        logger.info("✅ Captcha solved successfully!")
+                    else:
+                        return (False, None, "❌ Captcha solve failed! Please try again.")
+            except:
+                # No captcha
+                pass
+            
+            # ========== OTP ==========
             if otp_callback:
                 otp = otp_callback()
                 if not otp:
@@ -772,7 +831,7 @@ class GmailBot:
                 except:
                     return (False, None, "❌ OTP verification failed! Please check your OTP.")
             
-            # SKIP RECOVERY
+            # ========== SKIP RECOVERY ==========
             try:
                 skip_btn = WebDriverWait(self.driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, "//span[text()='Skip']"))
@@ -782,7 +841,7 @@ class GmailBot:
             except:
                 pass
             
-            # AGREE
+            # ========== AGREE ==========
             try:
                 agree_btn = WebDriverWait(self.driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, "//span[text()='I agree']"))
@@ -819,7 +878,7 @@ def get_user_state(user_id: str) -> UserState:
         return user_sessions[user_id]
 
 # ============================================
-# BOT HANDLERS
+# TELEGRAM BOT HANDLERS
 # ============================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1191,15 +1250,12 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Not approved!")
         return
     
-    proxy_stats = proxy_manager.get_stats()
-    
     with user_sessions_lock:
         active_count = len(user_sessions)
         creating_count = sum(1 for s in user_sessions.values() if s.step == "creating")
     
     msg = f"📊 **Bot Statistics**\n\n"
-    msg += f"**Proxies:**\n"
-    msg += f"• Total: {proxy_stats['total']}\n\n"
+    msg += f"**Proxies:** {len(PROXY_LIST)}\n\n"
     msg += f"**Users:**\n"
     msg += f"• Approved: {len(approval_system.get_approved_list())}\n"
     msg += f"• Pending: {len(approval_system.get_pending_list())}\n"
@@ -1258,7 +1314,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     print("\n" + "="*60)
-    print("🚀 GMAIL CREATOR BOT")
+    print("🚀 GMAIL CREATOR BOT (CAPSOLVER ENABLED)")
     print("="*60)
     print(f"👑 Owner: {', '.join(OWNERS)}")
     print(f"📊 Proxies Loaded: {len(PROXY_LIST)}")
