@@ -1,5 +1,8 @@
 # ============================================
-# GMAIL BOT - MANUAL CAPTCHA SUPPORT
+# GMAIL CREATOR BOT - FAST PROXY + FULL FEATURES
+# ============================================
+# TOKEN: 8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec
+# OWNER: 8785590284
 # ============================================
 
 import asyncio
@@ -13,6 +16,7 @@ import os
 import threading
 from datetime import datetime, timedelta
 from typing import Dict, Optional
+from concurrent.futures import ThreadPoolExecutor
 
 # Telegram
 from telegram import Update
@@ -30,14 +34,8 @@ from selenium_stealth import stealth
 from webdriver_manager.chrome import ChromeDriverManager
 import chromedriver_autoinstaller
 
-# ============================================
-# CONFIGURATION
-# ============================================
-
-BOT_TOKEN = "8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec"
-OWNERS = ["8785590284"]
-MAX_RETRIES = 20
-HEADLESS_MODE = True
+# Requests
+import requests
 
 # ============================================
 # LOGGING
@@ -48,6 +46,127 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+# ============================================
+# CONFIGURATION
+# ============================================
+
+BOT_TOKEN = "8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec"
+OWNERS = ["8785590284"]
+MAX_RETRIES = 20
+HEADLESS_MODE = True
+
+# ============================================
+# FAST PROXY LIST (35 BEST PROXIES)
+# ============================================
+
+FAST_PROXY_LIST = [
+    "http://34.94.46.8:80",
+    "http://8.211.49.86:80",
+    "http://167.99.124.118:80",
+    "http://108.161.135.118:80",
+    "http://8.221.139.222:8080",
+    "http://8.211.42.167:104",
+    "http://34.81.160.132:80",
+    "http://65.111.1.201:3129",
+    "http://85.214.107.177:80",
+    "http://8.221.141.88:5006",
+    "http://8.211.49.86:3129",
+    "http://8.211.51.115:9050",
+    "http://8.215.112.214:7777",
+    "http://8.219.97.248:80",
+    "http://8.211.42.167:9080",
+    "http://8.211.51.115:8081",
+    "http://8.210.17.35:1311",
+    "http://8.210.17.35:8001",
+    "http://34.101.184.164:3128",
+    "http://52.34.243.150:8080",
+    "http://45.43.64.38:6296",
+    "http://65.111.3.44:3129",
+    "http://103.95.34.186:3128",
+    "http://162.214.74.29:3128",
+    "http://89.169.37.254:1080",
+    "http://95.211.174.135:3128",
+    "http://103.43.191.71:8888",
+    "http://103.86.1.34:4145",
+    "http://103.122.64.163:8080",
+    "http://103.142.69.169:8885",
+    "http://103.153.247.74:8080",
+    "http://103.160.40.254:8080",
+    "http://103.169.238.25:2021",
+    "http://103.237.102.191:11111",
+    "http://103.246.194.251:3128",
+]
+
+# ============================================
+# FAST PROXY MANAGER
+# ============================================
+
+class ProxyManager:
+    def __init__(self):
+        self.proxies = FAST_PROXY_LIST.copy()
+        self.best_proxies = []
+        self.used_proxies = {}
+        self.failed_proxies = {}
+        self.lock = threading.Lock()
+        self._select_best_proxies()
+        logger.info(f"✅ {len(self.best_proxies)} fast proxies loaded")
+    
+    def _select_best_proxies(self, count=15):
+        """Parallel proxy testing - fast"""
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = [executor.submit(self._test_proxy, p) for p in self.proxies[:60]]
+            for proxy, future in zip(self.proxies[:60], futures):
+                try:
+                    if future.result(timeout=5):
+                        self.best_proxies.append(proxy)
+                        if len(self.best_proxies) >= count:
+                            break
+                except:
+                    pass
+        
+        if not self.best_proxies:
+            self.best_proxies = self.proxies[:10]
+    
+    def _test_proxy(self, proxy):
+        try:
+            proxies = {'http': f'http://{proxy}', 'https': f'http://{proxy}'}
+            r = requests.get('https://www.google.com', proxies=proxies, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
+            return r.status_code == 200
+        except:
+            return False
+    
+    def get_proxy(self, user_id: int) -> Optional[str]:
+        with self.lock:
+            user_id = str(user_id)
+            used = self.used_proxies.get(user_id, [])
+            failed = self.failed_proxies.get(user_id, [])
+            available = [p for p in self.best_proxies if p not in used and p not in failed]
+            
+            if not available:
+                if len(used) >= len(self.best_proxies):
+                    self.used_proxies[user_id] = []
+                    available = [p for p in self.best_proxies if p not in failed]
+                if not available:
+                    return None
+            
+            proxy = random.choice(available)
+            self.used_proxies.setdefault(user_id, []).append(proxy)
+            return proxy
+    
+    def mark_failed(self, user_id: int, proxy: str):
+        with self.lock:
+            user_id = str(user_id)
+            self.failed_proxies.setdefault(user_id, []).append(proxy)
+            if proxy in self.used_proxies.get(user_id, []):
+                self.used_proxies[user_id].remove(proxy)
+    
+    def get_stats(self):
+        return {
+            'total': len(self.best_proxies),
+            'used': len(self.used_proxies),
+            'failed': len(self.failed_proxies)
+        }
 
 # ============================================
 # DOB GENERATOR (18+)
@@ -139,59 +258,6 @@ class ApprovalSystem:
         return self.approved_users
 
 # ============================================
-# PROXY LIST (Short but Working)
-# ============================================
-
-PROXY_LIST = [
-    "http://45.43.64.38:6296", "http://65.111.3.44:3129", "http://8.211.49.86:80",
-    "http://103.95.34.186:3128", "http://162.214.74.29:3128", "http://34.94.46.8:80",
-    "http://108.161.135.118:80", "http://167.99.124.118:80", "http://8.221.139.222:8080",
-    "http://8.221.141.88:5006", "http://8.211.42.167:104", "http://8.211.49.86:3129",
-    "http://8.211.51.115:9050", "http://8.211.200.183:1000", "http://8.215.112.214:7777",
-    "http://8.219.97.248:80", "http://8.221.138.111:9080", "http://8.221.141.88:8820",
-    "http://8.221.141.88:91", "http://8.221.138.111:5060", "http://8.211.42.167:9080",
-    "http://8.211.51.115:8081", "http://8.211.51.115:4002", "http://8.210.17.35:1311",
-    "http://8.210.17.35:8001", "http://34.81.160.132:80", "http://34.43.46.91:80",
-    "http://34.101.184.164:3128", "http://52.34.243.150:8080", "http://65.111.1.201:3129",
-    "http://85.214.107.177:80", "http://89.169.37.254:1080", "http://95.211.174.135:3128",
-]
-
-# ============================================
-# PROXY MANAGER
-# ============================================
-
-class ProxyManager:
-    def __init__(self):
-        self.proxies = PROXY_LIST.copy()
-        self.used_proxies = {}
-        self.failed_proxies = {}
-        self.lock = threading.Lock()
-        logger.info(f"✅ Loaded {len(self.proxies)} proxies")
-    
-    def get_proxy(self, user_id: int) -> Optional[str]:
-        with self.lock:
-            user_id = str(user_id)
-            used = self.used_proxies.get(user_id, [])
-            failed = self.failed_proxies.get(user_id, [])
-            available = [p for p in self.proxies if p not in used and p not in failed]
-            if not available:
-                if len(used) >= len(self.proxies):
-                    self.used_proxies[user_id] = []
-                    available = [p for p in self.proxies if p not in failed]
-                if not available:
-                    return None
-            proxy = random.choice(available)
-            self.used_proxies.setdefault(user_id, []).append(proxy)
-            return proxy
-    
-    def mark_failed(self, user_id: int, proxy: str):
-        with self.lock:
-            user_id = str(user_id)
-            self.failed_proxies.setdefault(user_id, []).append(proxy)
-            if proxy in self.used_proxies.get(user_id, []):
-                self.used_proxies[user_id].remove(proxy)
-
-# ============================================
 # USER STATE
 # ============================================
 
@@ -211,6 +277,7 @@ class UserState:
         self.awaiting_captcha = False
         self.captcha_token = None
         self.dob = None
+        self.last_error = None
         self.driver = None
         self.lock = threading.Lock()
     
@@ -228,6 +295,7 @@ class UserState:
             self.awaiting_captcha = False
             self.captcha_token = None
             self.dob = None
+            self.last_error = None
             if self.driver:
                 try:
                     self.driver.quit()
@@ -245,11 +313,10 @@ proxy_manager = ProxyManager()
 user_semaphore = asyncio.Semaphore(3)
 
 # ============================================
-# CHROMEDRIVER SETUP - RAILWAY FIXED
+# CHROMEDRIVER SETUP
 # ============================================
 
 def find_chrome_path() -> Optional[str]:
-    """Find Chrome/Chromium path on Railway"""
     chrome_paths = [
         "/usr/bin/chromium",
         "/usr/bin/chromium-browser",
@@ -259,10 +326,7 @@ def find_chrome_path() -> Optional[str]:
         "/opt/google/chrome/chrome",
     ]
     for path in chrome_paths:
-        if os.path.exists(path):
-            logger.info(f"✅ Chrome found: {path}")
-            return path
-        if shutil.which(path):
+        if os.path.exists(path) or shutil.which(path):
             logger.info(f"✅ Chrome found: {path}")
             return path
     return None
@@ -272,16 +336,14 @@ def setup_chromedriver():
         chrome_path = find_chrome_path()
         if chrome_path:
             os.environ["CHROME_BIN"] = chrome_path
-            logger.info(f"✅ Chrome binary set to: {chrome_path}")
         chromedriver_autoinstaller.install()
         logger.info("✅ ChromeDriver installed")
         return True
-    except Exception as e:
-        logger.error(f"❌ ChromeDriver setup failed: {e}")
+    except:
         return False
 
 # ============================================
-# GMAIL BOT - WITH MANUAL CAPTCHA
+# GMAIL BOT
 # ============================================
 
 class GmailBot:
@@ -292,20 +354,13 @@ class GmailBot:
     
     def _setup_driver(self):
         options = Options()
-        
         chrome_path = find_chrome_path()
         if chrome_path:
             options.binary_location = chrome_path
-        
         if self.proxy:
-            if self.proxy.startswith(('http://', 'https://', 'socks5://')):
-                options.add_argument(f'--proxy-server={self.proxy}')
-            else:
-                options.add_argument(f'--proxy-server=http://{self.proxy}')
-        
+            options.add_argument(f'--proxy-server={self.proxy}')
         if HEADLESS_MODE:
             options.add_argument("--headless=new")
-        
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
@@ -313,12 +368,7 @@ class GmailBot:
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920,1080")
-        
-        user_agents = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-        ]
-        options.add_argument(f'user-agent={random.choice(user_agents)}')
+        options.add_argument(f'user-agent={random.choice(["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"])}')
         
         try:
             service = Service()
@@ -328,47 +378,32 @@ class GmailBot:
             self.driver = webdriver.Chrome(service=service, options=options)
         
         try:
-            stealth(self.driver,
-                    languages=["en-US", "en"],
-                    vendor="Google Inc.",
-                    platform="Win32",
-                    webgl_vendor="Intel Inc.",
-                    renderer="Intel Iris OpenGL Engine",
-                    fix_hairline=True)
+            stealth(self.driver, languages=["en-US", "en"], vendor="Google Inc.", platform="Win32", webgl_vendor="Intel Inc.", renderer="Intel Iris OpenGL Engine", fix_hairline=True)
         except:
             pass
-        
         self.driver.set_page_load_timeout(30)
     
-    def create_account(self, email_prefix: str, password: str, phone: str, otp_callback=None, captcha_callback=None) -> tuple:
+    def create_account(self, email_prefix, password, phone, otp_callback=None, captcha_callback=None) -> tuple:
         try:
             if not self.driver:
-                return (False, None, "Driver not initialized")
+                return (False, None, "DRIVER_NOT_INITIALIZED")
             
             logger.info(f"📧 Creating: {email_prefix}@gmail.com")
             self.driver.get("https://accounts.google.com/signup")
             time.sleep(5)
             
-            # ========== NAME ==========
-            first_name = WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located((By.ID, "firstName"))
-            )
+            # NAME
+            first_name = WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "firstName")))
             first_name.send_keys(email_prefix[:10])
-            last_name = self.driver.find_element(By.ID, "lastName")
-            last_name.send_keys("User")
-            next_btn = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))
-            )
-            next_btn.click()
+            self.driver.find_element(By.ID, "lastName").send_keys("User")
+            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))).click()
             time.sleep(3)
             
-            # ========== DOB ==========
+            # DOB
             dob = generate_dob()
-            month_dropdown = WebDriverWait(self.driver, 20).until(
-                EC.element_to_be_clickable((By.ID, "month"))
-            )
+            month_dropdown = WebDriverWait(self.driver, 20).until(EC.element_to_be_clickable((By.ID, "month")))
             month_dropdown.click()
-            time.sleep(1)
+            time.sleep(0.5)
             for option in self.driver.find_elements(By.XPATH, "//select[@id='month']/option"):
                 if option.get_attribute('value') == str(dob['month_int']):
                     option.click()
@@ -377,8 +412,7 @@ class GmailBot:
             self.driver.find_element(By.ID, "year").send_keys(str(dob['year_int']))
             
             try:
-                gender_dropdown = self.driver.find_element(By.ID, "gender")
-                gender_dropdown.click()
+                self.driver.find_element(By.ID, "gender").click()
                 time.sleep(0.5)
                 gender_options = self.driver.find_elements(By.XPATH, "//select[@id='gender']/option")
                 if len(gender_options) > 2:
@@ -386,24 +420,15 @@ class GmailBot:
             except:
                 pass
             
-            next_btn = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))
-            )
-            next_btn.click()
+            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))).click()
             time.sleep(3)
             
-            # ========== EMAIL ==========
-            username = WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located((By.ID, "username"))
-            )
-            username.send_keys(email_prefix)
-            next_btn = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))
-            )
-            next_btn.click()
+            # EMAIL
+            WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "username"))).send_keys(email_prefix)
+            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))).click()
             time.sleep(3)
             
-            # CHECK: Username taken
+            # Username taken check
             try:
                 for error in self.driver.find_elements(By.XPATH, "//div[@role='alert']"):
                     if "taken" in error.text.lower() or "already" in error.text.lower():
@@ -411,62 +436,46 @@ class GmailBot:
             except:
                 pass
             
-            # ========== PASSWORD ==========
+            # PASSWORD
             self.driver.find_element(By.NAME, "Passwd").send_keys(password)
             self.driver.find_element(By.NAME, "PasswdAgain").send_keys(password)
-            next_btn = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))
-            )
-            next_btn.click()
+            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))).click()
             time.sleep(3)
             
-            # ========== PHONE ==========
-            phone_input = WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located((By.ID, "phoneNumberId"))
-            )
-            phone_input.send_keys(phone)
-            next_btn = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))
-            )
-            next_btn.click()
+            # PHONE
+            WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "phoneNumberId"))).send_keys(phone)
+            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[text()='Next']"))).click()
             time.sleep(5)
             
-            # ========== CAPTCHA HANDLING (MANUAL) ==========
+            # CAPTCHA DETECT
             try:
                 captcha_elements = self.driver.find_elements(By.XPATH, "//div[@data-sitekey]")
-                if captcha_elements:
+                if captcha_elements and captcha_callback:
                     sitekey = captcha_elements[0].get_attribute('data-sitekey')
                     page_url = self.driver.current_url
                     
-                    logger.info("🔍 Captcha detected! Waiting for manual solve...")
+                    logger.info("🔍 Captcha detected! Notifying user...")
+                    result = captcha_callback(sitekey, page_url)
+                    if not result:
+                        return (False, None, "CAPTCHA_TIMEOUT")
                     
-                    # ✅ User ko captcha solve karne ka link bhejo
-                    if captcha_callback:
-                        captcha_token = captcha_callback(sitekey, page_url)
-                        if captcha_token:
-                            self.driver.execute_script(
-                                f"document.getElementById('g-recaptcha-response').innerHTML='{captcha_token}';"
-                            )
-                            time.sleep(2)
-                            logger.info("✅ Captcha token injected!")
-                        else:
-                            return (False, None, "CAPTCHA_TIMEOUT")
+                    # Wait for user to solve and inject token
+                    time.sleep(5)
+                    token_field = self.driver.find_elements(By.ID, "g-recaptcha-response")
+                    if token_field and token_field[0].get_attribute('value'):
+                        logger.info("✅ Captcha solved!")
+                    else:
+                        logger.warning("⚠️ Captcha token not found, continuing anyway...")
             except Exception as e:
-                logger.warning(f"⚠️ Captcha handling error: {e}")
+                logger.warning(f"⚠️ Captcha handling: {e}")
             
-            # ========== OTP ==========
+            # OTP
             if otp_callback:
                 otp = otp_callback()
                 if not otp:
                     return (False, None, "OTP_TIMEOUT")
-                otp_input = WebDriverWait(self.driver, 30).until(
-                    EC.presence_of_element_located((By.ID, "code"))
-                )
-                otp_input.send_keys(otp)
-                verify_btn = WebDriverWait(self.driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, "//span[text()='Verify']"))
-                )
-                verify_btn.click()
+                WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.ID, "code"))).send_keys(otp)
+                WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[text()='Verify']"))).click()
                 time.sleep(3)
                 
                 try:
@@ -476,21 +485,17 @@ class GmailBot:
                 except:
                     pass
             
-            # ========== SKIP RECOVERY ==========
+            # SKIP RECOVERY
             try:
-                skip_btn = WebDriverWait(self.driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, "//span[text()='Skip']"))
-                )
+                skip_btn = WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[text()='Skip']")))
                 skip_btn.click()
                 time.sleep(2)
             except:
                 pass
             
-            # ========== AGREE ==========
+            # AGREE
             try:
-                agree_btn = WebDriverWait(self.driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, "//span[text()='I agree']"))
-                )
+                agree_btn = WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[text()='I agree']")))
                 agree_btn.click()
                 time.sleep(3)
             except:
@@ -504,8 +509,8 @@ class GmailBot:
                 return (False, None, "USERNAME_TAKEN")
             elif "password" in error_str.lower():
                 return (False, None, "PASSWORD_WEAK")
-            elif "phone" in error_str.lower():
-                return (False, None, "PHONE_INVALID")
+            elif "captcha" in error_str.lower():
+                return (False, None, "CAPTCHA_FAILED")
             else:
                 return (False, None, f"ERROR_{error_str[:50]}")
         finally:
@@ -516,7 +521,7 @@ class GmailBot:
                     pass
 
 # ============================================
-# HELPER FUNCTIONS
+# HELPERS
 # ============================================
 
 def get_user_state(user_id: str) -> UserState:
@@ -525,23 +530,25 @@ def get_user_state(user_id: str) -> UserState:
             user_sessions[user_id] = UserState(user_id)
         return user_sessions[user_id]
 
-def get_failed_reason(error_code: str) -> str:
-    reasons = {
+def get_error_message(error_code: str) -> str:
+    errors = {
         "USERNAME_TAKEN": "❌ Username already taken! Try different email prefix.",
         "PASSWORD_WEAK": "❌ Password is too weak! Use 8+ chars with letters, numbers, and special characters.",
         "OTP_INVALID": "❌ Invalid OTP! Please check and try again.",
         "OTP_TIMEOUT": "❌ OTP timeout! Please try again.",
         "PHONE_INVALID": "❌ Phone number invalid or already used!",
-        "CAPTCHA_TIMEOUT": "❌ Captcha solve timeout! Please try again.",
+        "CAPTCHA_TIMEOUT": "❌ Captcha solve timeout! Please solve faster.",
+        "CAPTCHA_FAILED": "❌ Captcha detected but failed! Please try again.",
+        "DRIVER_NOT_INITIALIZED": "❌ Chrome driver not initialized!",
         "UNKNOWN": "❌ Unknown error! Please try again."
     }
-    for key in reasons:
+    for key, msg in errors.items():
         if key in error_code.upper():
-            return reasons[key]
+            return msg
     return f"❌ Error: {error_code[:80]}"
 
 # ============================================
-# TELEGRAM BOT HANDLERS
+# TELEGRAM HANDLERS
 # ============================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -551,25 +558,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if approval_system.is_owner(user_id):
         await update.message.reply_text(
             "👑 **OWNER ACCESS**\n\n"
-            "/make - Create Gmail\n"
-            "/approve - Approve user\n"
-            "/reject - Reject user\n"
-            "/remove - Remove user\n"
-            "/pending - Pending users\n"
-            "/approved - Approved users\n"
-            "/stats - Statistics\n"
-            "/captcha YOUR_CODE - Submit manual captcha\n"
-            "/cancel - Cancel"
+            "/make - Create Gmail\n/approve - Approve user\n/reject - Reject user\n"
+            "/remove - Remove user\n/pending - Pending users\n/approved - Approved users\n"
+            "/stats - Statistics\n/active - Active users\n/cancel - Cancel"
         )
         return
     
     if approval_system.is_approved(user_id):
         await update.message.reply_text(
-            "✅ **ACCESS GRANTED**\n\n"
-            "/make - Create Gmail\n"
-            "/captcha YOUR_CODE - Submit manual captcha\n"
-            "/cancel - Cancel\n"
-            "/stats - Statistics"
+            "✅ **ACCESS GRANTED**\n\n/make - Create Gmail\n/cancel - Cancel\n/stats - Statistics"
         )
         return
     
@@ -583,26 +580,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def make_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
-    
     if not approval_system.is_approved(user_id):
         await update.message.reply_text("❌ Not approved! Use /start")
         return
     
     if not context.args or len(context.args) < 3:
         await update.message.reply_text(
-            "❌ **Wrong Format!**\n\n"
-            "Use: `/make name email password`\n"
-            "Example: `/make rahul rahul.kumar MyPass@123`"
+            "❌ **Wrong Format!**\n\nUse: `/make name email password`\nExample: `/make rahul rahul.kumar MyPass@123`\n\nOR\n\nUse: `/make name|email|password`\nExample: `/make rahul|rahul.kumar|MyPass@123`"
         )
         return
     
-    name, email, password = context.args[0], context.args[1], context.args[2]
+    full_text = " ".join(context.args)
+    if "|" in full_text:
+        parts = full_text.split("|")
+        if len(parts) == 3:
+            name, email, password = parts[0].strip(), parts[1].strip(), parts[2].strip()
+        else:
+            await update.message.reply_text("❌ Invalid format!")
+            return
+    else:
+        name, email, password = context.args[0], context.args[1], context.args[2]
     
-    if len(email) < 6:
-        await update.message.reply_text("❌ Email too short! Min 6 chars.")
-        return
-    if len(password) < 8:
-        await update.message.reply_text("❌ Password too short! Min 8 chars.")
+    if len(email) < 6 or len(password) < 8:
+        await update.message.reply_text("❌ Email min 6 chars, Password min 8 chars.")
         return
     
     state = get_user_state(user_id)
@@ -614,12 +614,7 @@ async def make_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     state.dob = generate_dob()
     
     await update.message.reply_text(
-        f"📱 **Send Phone Number**\n\n"
-        f"📧 `{email}@gmail.com`\n"
-        f"🔑 `{password}`\n"
-        f"🎂 DOB: `{state.dob['full']}` (18+)\n\n"
-        f"Format: `+919876543210`\n"
-        f"Type `/cancel` to abort"
+        f"📱 **Send Phone Number**\n\n📧 `{email}@gmail.com`\n🔑 `{password}`\n🎂 DOB: `{state.dob['full']}` (18+)\n\nFormat: `+919876543210`\nType `/cancel` to abort"
     )
 
 async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -639,38 +634,10 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     state.step = "creating"
     
     msg = await update.message.reply_text(
-        f"⏳ **Creating Account...**\n"
-        f"📱 `{phone}`\n"
-        f"📧 `{state.email_prefix}@gmail.com`\n"
-        f"🎂 DOB: `{state.dob['full']}` (18+)\n"
-        f"🔄 Trying proxies..."
+        f"⏳ **Creating Account...**\n📱 `{phone}`\n📧 `{state.email_prefix}@gmail.com`\n🎂 DOB: `{state.dob['full']}` (18+)\n🔄 Trying up to {MAX_RETRIES} fast proxies..."
     )
     
     await create_account_with_retry(update, context, msg)
-
-async def captcha_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """User se manual captcha code lena"""
-    user_id = str(update.effective_user.id)
-    args = context.args
-    
-    if not args:
-        await update.message.reply_text(
-            "❌ Please provide the captcha token.\n"
-            "Example: `/captcha 03AGdBq26...`"
-        )
-        return
-    
-    token = args[0]
-    state = get_user_state(user_id)
-    
-    if not state.awaiting_captcha:
-        await update.message.reply_text("❌ No captcha request pending!")
-        return
-    
-    state.captcha_token = token
-    state.awaiting_captcha = False
-    
-    await update.message.reply_text("✅ Captcha token received! Continuing...")
 
 async def create_account_with_retry(update: Update, context: ContextTypes.DEFAULT_TYPE, msg):
     user_id = str(update.effective_user.id)
@@ -690,23 +657,18 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
                 await msg.edit_text("❌ No proxies available!")
                 return
             
-            await msg.edit_text(f"🔄 **Attempt {state.retry_count}/{MAX_RETRIES}**\n🌐 Using proxy...")
+            await msg.edit_text(f"🔄 **Attempt {state.retry_count}/{MAX_RETRIES}**")
             
             try:
                 otp_received = asyncio.Event()
                 otp_value = None
-                captcha_received = asyncio.Event()
-                captcha_value = None
+                captcha_done = asyncio.Event()
                 
                 async def get_otp():
                     nonlocal otp_value
                     state.awaiting_otp = True
                     await msg.edit_text(
-                        f"📩 **OTP SENT!**\n\n"
-                        f"Check phone: `{state.phone}`\n"
-                        f"Enter 6-digit OTP.\n"
-                        f"⏳ 120 seconds\n"
-                        f"Type `/cancel` to abort"
+                        f"📩 **OTP SENT!**\n\nCheck phone: `{state.phone}`\nEnter 6-digit OTP.\n⏳ 120 seconds\nType `/cancel` to abort"
                     )
                     try:
                         await asyncio.wait_for(otp_received.wait(), timeout=120)
@@ -714,31 +676,21 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
                     except:
                         return None
                 
-                async def get_captcha(sitekey, page_url):
-                    nonlocal captcha_value
+                async def handle_captcha(sitekey, page_url):
                     state.awaiting_captcha = True
-                    captcha_received.clear()
-                    
-                    # ✅ User ko captcha link bhejo
                     await context.bot.send_message(
                         user_id,
-                        f"🔍 **CAPTCHA REQUIRED!**\n\n"
-                        f"Sitekey: `{sitekey}`\n"
-                        f"Page URL: {page_url}\n\n"
-                        f"Please solve the captcha manually:\n"
-                        f"1. Open this link: [Google Sign-up](https://accounts.google.com/signup)\n"
-                        f"2. Complete the captcha\n"
-                        f"3. Submit the token using:\n"
-                        f"`/captcha YOUR_TOKEN`\n\n"
-                        f"⏳ You have 120 seconds.\n"
-                        f"Type `/cancel` to abort"
+                        f"🔍 **CAPTCHA REQUIRED!**\n\nGoogle is asking for captcha verification.\n\n"
+                        f"📌 **Please solve the captcha manually:**\n1️⃣ Open this link: [Google Sign-up](https://accounts.google.com/signup)\n"
+                        f"2️⃣ Complete the captcha\n3️⃣ The bot will auto-detect when you solve it!\n\n⏳ You have **5 minutes** to solve.\nType `/cancel` to abort."
                     )
+                    await msg.edit_text(f"🔍 **CAPTCHA DETECTED!**\n\n📩 A link has been sent to you.\nPlease solve the captcha manually.\nBot will auto-detect when solved.\n\n⏳ 5 minutes timeout.")
                     
                     try:
-                        await asyncio.wait_for(captcha_received.wait(), timeout=120)
-                        return captcha_value
+                        await asyncio.wait_for(captcha_done.wait(), timeout=300)
+                        return True
                     except:
-                        return None
+                        return False
                 
                 bot = GmailBot(proxy)
                 result = await asyncio.to_thread(
@@ -747,29 +699,22 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
                     state.password,
                     state.phone,
                     get_otp,
-                    get_captcha
+                    handle_captcha
                 )
                 
                 if result[0]:
                     success = True
                     state.created_email = result[1]
                     state.step = "done"
-                    
                     await msg.edit_text(
-                        f"✅ **ACCOUNT CREATED!** 🎉\n\n"
-                        f"📧 `{result[1]}`\n"
-                        f"🔑 `{state.password}`\n"
-                        f"📱 `{state.phone}`\n"
-                        f"🎂 DOB: `{state.dob['full']}`\n\n"
-                        f"⚠️ Save these details securely!"
+                        f"✅ **ACCOUNT CREATED!** 🎉\n\n📧 `{result[1]}`\n🔑 `{state.password}`\n📱 `{state.phone}`\n🎂 DOB: `{state.dob['full']}`\n\n⚠️ Save these details securely!"
                     )
                     break
                 else:
                     error_code = result[2] if len(result) > 2 else "UNKNOWN"
                     state.last_error = error_code
                     proxy_manager.mark_failed(user_id, proxy)
-                    reason = get_failed_reason(error_code)
-                    await msg.edit_text(f"❌ Attempt {state.retry_count} failed\n{reason}\n🔄 Trying next proxy...")
+                    await msg.edit_text(f"❌ Attempt {state.retry_count} failed\n{get_error_message(error_code)}\n🔄 Trying next proxy...")
                     
             except Exception as e:
                 proxy_manager.mark_failed(user_id, proxy)
@@ -777,15 +722,9 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
     
     if not success:
         state.step = "idle"
-        final_reason = get_failed_reason(state.last_error or "UNKNOWN")
         await msg.edit_text(
-            f"❌ **All attempts failed!**\n\n"
-            f"{final_reason}\n\n"
-            f"💡 Tips:\n"
-            f"• Try a different phone number\n"
-            f"• Try a different email prefix\n"
-            f"• Make sure password is strong (8+ chars)\n\n"
-            f"Try again with `/make`"
+            f"❌ **All attempts failed!**\n\n{get_error_message(state.last_error or 'UNKNOWN')}\n\n"
+            f"💡 Tips:\n• Try a different phone number\n• Try a different email prefix\n• Make sure password is strong (8+ chars)\n\nTry again with `/make`"
         )
 
 async def handle_otp(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -803,10 +742,8 @@ async def handle_otp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     with otp_storage_lock:
         otp_storage[user_id] = otp
-    
     state.otp_code = otp
     state.awaiting_otp = False
-    
     await update.message.reply_text("✅ OTP received! Verifying...")
 
 # ============================================
@@ -875,7 +812,7 @@ async def pending_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = "📋 **Pending Users**\n\n"
     for uid, data in pending.items():
         msg += f"• `{uid}` - @{data.get('username', 'unknown')}\n"
-    await update.message.reply_text(msg)
+    await update.message.reply_text(msg + "\nUse `/approve user_id` or `/reject user_id`")
 
 async def approved_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not approval_system.is_owner(str(update.effective_user.id)):
@@ -888,6 +825,22 @@ async def approved_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = "✅ **Approved Users**\n\n"
     for uid, data in approved.items():
         msg += f"• `{uid}` - @{data.get('username', 'unknown')}\n"
+    await update.message.reply_text(msg + "\nUse `/remove user_id` to revoke")
+
+async def active_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not approval_system.is_owner(str(update.effective_user.id)):
+        await update.message.reply_text("❌ Only owner!")
+        return
+    with user_sessions_lock:
+        active_users = list(user_sessions.keys())
+    if not active_users:
+        await update.message.reply_text("No active users.")
+        return
+    msg = "🟢 **Active Users**\n\n"
+    for uid in active_users:
+        state = get_user_state(uid)
+        step = state.step if state else "idle"
+        msg += f"• `{uid}` - {step}\n"
     await update.message.reply_text(msg)
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -895,19 +848,14 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not approval_system.is_approved(user_id):
         await update.message.reply_text("❌ Not approved!")
         return
-    
+    proxy_stats = proxy_manager.get_stats()
     with user_sessions_lock:
         active_count = len(user_sessions)
         creating_count = sum(1 for s in user_sessions.values() if s.step == "creating")
-    
-    msg = f"📊 **Bot Statistics**\n\n"
-    msg += f"**Proxies:** {len(PROXY_LIST)}\n\n"
-    msg += f"**Users:**\n"
-    msg += f"• Approved: {len(approval_system.get_approved_list())}\n"
-    msg += f"• Pending: {len(approval_system.get_pending_list())}\n"
-    msg += f"• Active: {active_count}\n"
-    msg += f"• Creating: {creating_count}"
-    await update.message.reply_text(msg)
+    await update.message.reply_text(
+        f"📊 **Bot Statistics**\n\n**Proxies:**\n• Total: {proxy_stats['total']}\n• Used: {proxy_stats['used']}\n• Failed: {proxy_stats['failed']}\n\n"
+        f"**Users:**\n• Approved: {len(approval_system.get_approved_list())}\n• Pending: {len(approval_system.get_pending_list())}\n• Active: {active_count}\n• Creating: {creating_count}"
+    )
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -935,14 +883,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_phone(update, context)
         return
     
-    await update.message.reply_text(
-        "❌ I don't understand.\n\n"
-        "Use:\n"
-        "/make - Create Gmail\n"
-        "/captcha TOKEN - Submit captcha\n"
-        "/cancel - Cancel\n"
-        "/stats - Statistics"
-    )
+    await update.message.reply_text("❌ I don't understand.\n\nUse:\n/make - Create Gmail\n/cancel - Cancel\n/stats - Statistics")
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f"Update {update} caused error {context.error}")
@@ -953,25 +894,25 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     print("\n" + "="*60)
-    print("🚀 GMAIL CREATOR BOT - MANUAL CAPTCHA")
+    print("🚀 GMAIL CREATOR BOT - FAST PROXY")
     print("="*60)
     print(f"👑 Owner: {', '.join(OWNERS)}")
-    print(f"📊 Proxies: {len(PROXY_LIST)}")
+    print(f"📊 Fast Proxies: {len(proxy_manager.best_proxies)}")
+    print(f"✅ Approved: {len(approval_system.get_approved_list())}")
+    print(f"⏳ Pending: {len(approval_system.get_pending_list())}")
     print(f"🎯 Headless: {HEADLESS_MODE}")
     print("="*60)
     print("🤖 Bot is running...")
-    print("📝 Manual Captcha Mode: User will solve captcha manually")
     print("="*60 + "\n")
     
     setup_chromedriver()
     
     application = Application.builder().token(BOT_TOKEN).build()
-    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("make", make_command))
-    application.add_handler(CommandHandler("captcha", captcha_command))
     application.add_handler(CommandHandler("cancel", cancel))
     application.add_handler(CommandHandler("stats", stats_command))
+    application.add_handler(CommandHandler("active", active_command))
     application.add_handler(CommandHandler("approve", approve_command))
     application.add_handler(CommandHandler("reject", reject_command))
     application.add_handler(CommandHandler("remove", remove_command))
@@ -979,7 +920,6 @@ def main():
     application.add_handler(CommandHandler("approved", approved_command))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_error_handler(error_handler)
-    
     application.run_polling()
 
 if __name__ == "__main__":
