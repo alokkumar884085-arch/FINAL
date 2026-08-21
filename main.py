@@ -1,5 +1,5 @@
 # ============================================
-# GMAIL CREATOR BOT - FAST PROXY + FULL FEATURES
+# GMAIL CREATOR BOT - NO PROXY (DIRECT)
 # ============================================
 # TOKEN: 8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec
 # OWNER: 8785590284
@@ -16,7 +16,6 @@ import os
 import threading
 from datetime import datetime, timedelta
 from typing import Dict, Optional
-from concurrent.futures import ThreadPoolExecutor
 
 # Telegram
 from telegram import Update
@@ -34,9 +33,6 @@ from selenium_stealth import stealth
 from webdriver_manager.chrome import ChromeDriverManager
 import chromedriver_autoinstaller
 
-# Requests
-import requests
-
 # ============================================
 # LOGGING
 # ============================================
@@ -53,120 +49,10 @@ logger = logging.getLogger(__name__)
 
 BOT_TOKEN = "8879549452:AAHf_mHGAQNMayGTm6FSHfePTrTmFjR5Vec"
 OWNERS = ["8785590284"]
-MAX_RETRIES = 20
+MAX_RETRIES = 5
 HEADLESS_MODE = True
 
-# ============================================
-# FAST PROXY LIST (35 BEST PROXIES)
-# ============================================
-
-FAST_PROXY_LIST = [
-    "http://34.94.46.8:80",
-    "http://8.211.49.86:80",
-    "http://167.99.124.118:80",
-    "http://108.161.135.118:80",
-    "http://8.221.139.222:8080",
-    "http://8.211.42.167:104",
-    "http://34.81.160.132:80",
-    "http://65.111.1.201:3129",
-    "http://85.214.107.177:80",
-    "http://8.221.141.88:5006",
-    "http://8.211.49.86:3129",
-    "http://8.211.51.115:9050",
-    "http://8.215.112.214:7777",
-    "http://8.219.97.248:80",
-    "http://8.211.42.167:9080",
-    "http://8.211.51.115:8081",
-    "http://8.210.17.35:1311",
-    "http://8.210.17.35:8001",
-    "http://34.101.184.164:3128",
-    "http://52.34.243.150:8080",
-    "http://45.43.64.38:6296",
-    "http://65.111.3.44:3129",
-    "http://103.95.34.186:3128",
-    "http://162.214.74.29:3128",
-    "http://89.169.37.254:1080",
-    "http://95.211.174.135:3128",
-    "http://103.43.191.71:8888",
-    "http://103.86.1.34:4145",
-    "http://103.122.64.163:8080",
-    "http://103.142.69.169:8885",
-    "http://103.153.247.74:8080",
-    "http://103.160.40.254:8080",
-    "http://103.169.238.25:2021",
-    "http://103.237.102.191:11111",
-    "http://103.246.194.251:3128",
-]
-
-# ============================================
-# FAST PROXY MANAGER
-# ============================================
-
-class ProxyManager:
-    def __init__(self):
-        self.proxies = FAST_PROXY_LIST.copy()
-        self.best_proxies = []
-        self.used_proxies = {}
-        self.failed_proxies = {}
-        self.lock = threading.Lock()
-        self._select_best_proxies()
-        logger.info(f"✅ {len(self.best_proxies)} fast proxies loaded")
-    
-    def _select_best_proxies(self, count=15):
-        """Parallel proxy testing - fast"""
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            futures = [executor.submit(self._test_proxy, p) for p in self.proxies[:60]]
-            for proxy, future in zip(self.proxies[:60], futures):
-                try:
-                    if future.result(timeout=5):
-                        self.best_proxies.append(proxy)
-                        if len(self.best_proxies) >= count:
-                            break
-                except:
-                    pass
-        
-        if not self.best_proxies:
-            self.best_proxies = self.proxies[:10]
-    
-    def _test_proxy(self, proxy):
-        try:
-            proxies = {'http': f'http://{proxy}', 'https': f'http://{proxy}'}
-            r = requests.get('https://www.google.com', proxies=proxies, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
-            return r.status_code == 200
-        except:
-            return False
-    
-    def get_proxy(self, user_id: int) -> Optional[str]:
-        with self.lock:
-            user_id = str(user_id)
-            used = self.used_proxies.get(user_id, [])
-            failed = self.failed_proxies.get(user_id, [])
-            available = [p for p in self.best_proxies if p not in used and p not in failed]
-            
-            if not available:
-                if len(used) >= len(self.best_proxies):
-                    self.used_proxies[user_id] = []
-                    available = [p for p in self.best_proxies if p not in failed]
-                if not available:
-                    return None
-            
-            proxy = random.choice(available)
-            self.used_proxies.setdefault(user_id, []).append(proxy)
-            return proxy
-    
-    def mark_failed(self, user_id: int, proxy: str):
-        with self.lock:
-            user_id = str(user_id)
-            self.failed_proxies.setdefault(user_id, []).append(proxy)
-            if proxy in self.used_proxies.get(user_id, []):
-                self.used_proxies[user_id].remove(proxy)
-    
-    def get_stats(self):
-        return {
-            'total': len(self.best_proxies),
-            'used': len(self.used_proxies),
-            'failed': len(self.failed_proxies)
-        }
+# ✅ PROXY HATAYA - DIRECT CONNECTION
 
 # ============================================
 # DOB GENERATOR (18+)
@@ -275,10 +161,8 @@ class UserState:
         self.start_time = datetime.now()
         self.awaiting_otp = False
         self.awaiting_captcha = False
-        self.captcha_token = None
         self.dob = None
         self.last_error = None
-        self.driver = None
         self.lock = threading.Lock()
     
     def reset(self):
@@ -293,15 +177,8 @@ class UserState:
             self.otp_code = None
             self.awaiting_otp = False
             self.awaiting_captcha = False
-            self.captcha_token = None
             self.dob = None
             self.last_error = None
-            if self.driver:
-                try:
-                    self.driver.quit()
-                except:
-                    pass
-                self.driver = None
 
 user_sessions: Dict[str, UserState] = {}
 user_sessions_lock = threading.Lock()
@@ -309,7 +186,6 @@ otp_storage: Dict[str, str] = {}
 otp_storage_lock = threading.Lock()
 
 approval_system = ApprovalSystem()
-proxy_manager = ProxyManager()
 user_semaphore = asyncio.Semaphore(3)
 
 # ============================================
@@ -343,12 +219,11 @@ def setup_chromedriver():
         return False
 
 # ============================================
-# GMAIL BOT
+# GMAIL BOT - NO PROXY
 # ============================================
 
 class GmailBot:
-    def __init__(self, proxy: str):
-        self.proxy = proxy
+    def __init__(self):
         self.driver = None
         self._setup_driver()
     
@@ -357,10 +232,12 @@ class GmailBot:
         chrome_path = find_chrome_path()
         if chrome_path:
             options.binary_location = chrome_path
-        if self.proxy:
-            options.add_argument(f'--proxy-server={self.proxy}')
+        
+        # ✅ NO PROXY - DIRECT CONNECTION
+        
         if HEADLESS_MODE:
             options.add_argument("--headless=new")
+        
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
@@ -368,7 +245,7 @@ class GmailBot:
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920,1080")
-        options.add_argument(f'user-agent={random.choice(["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"])}')
+        options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
         
         try:
             service = Service()
@@ -453,21 +330,16 @@ class GmailBot:
                 if captcha_elements and captcha_callback:
                     sitekey = captcha_elements[0].get_attribute('data-sitekey')
                     page_url = self.driver.current_url
-                    
                     logger.info("🔍 Captcha detected! Notifying user...")
                     result = captcha_callback(sitekey, page_url)
                     if not result:
                         return (False, None, "CAPTCHA_TIMEOUT")
-                    
-                    # Wait for user to solve and inject token
                     time.sleep(5)
                     token_field = self.driver.find_elements(By.ID, "g-recaptcha-response")
                     if token_field and token_field[0].get_attribute('value'):
                         logger.info("✅ Captcha solved!")
-                    else:
-                        logger.warning("⚠️ Captcha token not found, continuing anyway...")
-            except Exception as e:
-                logger.warning(f"⚠️ Captcha handling: {e}")
+            except:
+                pass
             
             # OTP
             if otp_callback:
@@ -477,7 +349,6 @@ class GmailBot:
                 WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.ID, "code"))).send_keys(otp)
                 WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[text()='Verify']"))).click()
                 time.sleep(3)
-                
                 try:
                     for error in self.driver.find_elements(By.XPATH, "//div[@role='alert']"):
                         if "incorrect" in error.text.lower() or "invalid" in error.text.lower():
@@ -634,7 +505,7 @@ async def handle_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     state.step = "creating"
     
     msg = await update.message.reply_text(
-        f"⏳ **Creating Account...**\n📱 `{phone}`\n📧 `{state.email_prefix}@gmail.com`\n🎂 DOB: `{state.dob['full']}` (18+)\n🔄 Trying up to {MAX_RETRIES} fast proxies..."
+        f"⏳ **Creating Account...**\n📱 `{phone}`\n📧 `{state.email_prefix}@gmail.com`\n🎂 DOB: `{state.dob['full']}` (18+)\n🔄 Trying..."
     )
     
     await create_account_with_retry(update, context, msg)
@@ -651,11 +522,6 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
     async with user_semaphore:
         while state.retry_count < MAX_RETRIES and not success:
             state.retry_count += 1
-            
-            proxy = proxy_manager.get_proxy(user_id)
-            if not proxy:
-                await msg.edit_text("❌ No proxies available!")
-                return
             
             await msg.edit_text(f"🔄 **Attempt {state.retry_count}/{MAX_RETRIES}**")
             
@@ -692,7 +558,7 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
                     except:
                         return False
                 
-                bot = GmailBot(proxy)
+                bot = GmailBot()
                 result = await asyncio.to_thread(
                     bot.create_account,
                     state.email_prefix,
@@ -713,11 +579,9 @@ async def create_account_with_retry(update: Update, context: ContextTypes.DEFAUL
                 else:
                     error_code = result[2] if len(result) > 2 else "UNKNOWN"
                     state.last_error = error_code
-                    proxy_manager.mark_failed(user_id, proxy)
-                    await msg.edit_text(f"❌ Attempt {state.retry_count} failed\n{get_error_message(error_code)}\n🔄 Trying next proxy...")
+                    await msg.edit_text(f"❌ Attempt {state.retry_count} failed\n{get_error_message(error_code)}\n🔄 Retrying...")
                     
             except Exception as e:
-                proxy_manager.mark_failed(user_id, proxy)
                 await msg.edit_text(f"⚠️ Error: `{str(e)[:80]}`\n🔄 Retrying...")
     
     if not success:
@@ -848,12 +712,13 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not approval_system.is_approved(user_id):
         await update.message.reply_text("❌ Not approved!")
         return
-    proxy_stats = proxy_manager.get_stats()
+    
     with user_sessions_lock:
         active_count = len(user_sessions)
         creating_count = sum(1 for s in user_sessions.values() if s.step == "creating")
+    
     await update.message.reply_text(
-        f"📊 **Bot Statistics**\n\n**Proxies:**\n• Total: {proxy_stats['total']}\n• Used: {proxy_stats['used']}\n• Failed: {proxy_stats['failed']}\n\n"
+        f"📊 **Bot Statistics**\n\n**Connection:** Direct (No Proxy)\n\n"
         f"**Users:**\n• Approved: {len(approval_system.get_approved_list())}\n• Pending: {len(approval_system.get_pending_list())}\n• Active: {active_count}\n• Creating: {creating_count}"
     )
 
@@ -894,13 +759,13 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     print("\n" + "="*60)
-    print("🚀 GMAIL CREATOR BOT - FAST PROXY")
+    print("🚀 GMAIL CREATOR BOT - NO PROXY")
     print("="*60)
     print(f"👑 Owner: {', '.join(OWNERS)}")
-    print(f"📊 Fast Proxies: {len(proxy_manager.best_proxies)}")
     print(f"✅ Approved: {len(approval_system.get_approved_list())}")
     print(f"⏳ Pending: {len(approval_system.get_pending_list())}")
     print(f"🎯 Headless: {HEADLESS_MODE}")
+    print(f"🔗 Connection: Direct (No Proxy)")
     print("="*60)
     print("🤖 Bot is running...")
     print("="*60 + "\n")
